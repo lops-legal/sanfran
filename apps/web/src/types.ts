@@ -1,0 +1,57 @@
+export interface LegalSkill {
+  id: string;
+  name: string;
+  ownerName: string; // e.g., "XI-de-Agosto", "Garra-Aberta"
+  ownerAvatar: string; // Emoji or short SVG
+  description: string;
+  markdownContent: string; // The SKILL.md format content
+  rating: number; // e.g., 4.9
+  reviewCount: number; // e.g., 18
+  starsCount: number; // e.g., 1420
+  tags: string[]; // e.g., ["Contratos", "LGPD", "CDC"]
+  vertical: string; // e.g., "Trabalhista", "LGPD", "Tributário", "Consumidor", "Regulatório"
+  qualityScore: number; // 0-100 - Quality Score
+  regulatoryScore: number; // 0-100 - Security & Regulatory Score
+  qualityBreakdown: {
+    precisaoNormativa: number; // 0-10
+    especificidade: number; // 0-10
+    padraoEntrega: number; // 0-10
+    limitesAutonomia: number; // 0-10
+    atualizacao: number; // 0-10
+  };
+  regulatoryIssues: number; // e.g., 0 issues, 2 warnings
+  version: string;
+  updatedAt: string;
+  complianceChecked: boolean;
+  playgroundTestInput?: string;
+  playgroundExpectedOutput?: string;
+  playgroundSystemPrompt?: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  sender: "user" | "lex";
+  text: string;
+  status?: "typing" | "done" | "error";
+  generatedSkillMarkdown?: string; // Optional field if Lex generates a SKILL.md
+}
+
+export interface VerticalCategory {
+  id: string;
+  name: string;
+  icon: string; // lucide icon name
+  count: number;
+  description: string;
+  accentClass: string;
+}
+
+export interface TaskCategory {
+  id: string;
+  name: string;
+  count: number;
+}
+
+export interface FaqItem {
+  question: string;
+  answer: string;
+}
