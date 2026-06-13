@@ -19,10 +19,15 @@ export default function Marketplace({ skillsList, onSelectSkill, onNavigateToLex
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [minQualityScore, setMinQualityScore] = useState<number>(0);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [sortBy, setSortBy] = useState<"stars" | "recent" | "score">("stars");
+  const [sortBy, setSortBy] = useState<"stars" | "recent" | "score" | "hot">("stars");
   const [visibleCount, setVisibleCount] = useState<number>(3);
   const [loadingMore, setLoadingMore] = useState(false);
   
+  // Reset visible count when any filter changes
+  useEffect(() => {
+    setVisibleCount(3);
+  }, [searchQuery, selectedVertical, selectedCategory, minQualityScore, sortBy]);
+
   // Accordion active FAQ tracking
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   
@@ -63,6 +68,7 @@ export default function Marketplace({ skillsList, onSelectSkill, onNavigateToLex
   const sortedSkills = [...filteredSkills].sort((a, b) => {
     if (sortBy === "stars") return b.starsCount - a.starsCount;
     if (sortBy === "recent") return b.updatedAt.localeCompare(a.updatedAt);
+    if (sortBy === "hot") return (b as any).hotScore ? (b as any).hotScore - (a as any).hotScore : b.qualityScore - a.qualityScore;
     return b.qualityScore - a.qualityScore;
   });
 
@@ -92,18 +98,15 @@ export default function Marketplace({ skillsList, onSelectSkill, onNavigateToLex
       <div className="relative border-b border-[#232328] bg-[#09090b] pt-12 pb-14 px-4 overflow-hidden">
         {/* Absolute stylized red/black visual blocks inspired by uploaded references */}
         <div className="absolute top-0 right-0 w-[450px] h-[450px] rounded-full bg-red-600/5 filter blur-[100px] pointer-events-none" />
-        <div className="absolute bottom-0 left-10 w-4 h-4 text-red-600/20 font-mono text-xs select-none">
-          + FACULDADE_DIREITO_USP_1827_SANFRAN_MD
-        </div>
 
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             
-            {/* Left Column: Textual Intro and Interactive Search (7 Cols) */}
-            <div className="lg:col-span-7 space-y-6">
+            {/* Left Column: Textual Intro and Interactive Search (Full width) */}
+            <div className="lg:col-span-12 space-y-6">
               {/* Proposta de valor / Pre-heading */}
               <div className="flex items-center gap-2">
-                <span className="h-[2px] w-6 bg-red-600 inline-block" />
+                <span className="h-[2px] w-6 bg-red-650 inline-block" />
                 <span className="font-mono text-[10px] sm:text-xs text-red-500 font-extrabold uppercase tracking-widest text-shadow-glow">
                   ARCADA ACADÊMICA: AGENTSKILLS.IO COMPLIANT
                 </span>
@@ -118,23 +121,19 @@ export default function Marketplace({ skillsList, onSelectSkill, onNavigateToLex
               </p>
 
               {/* Interactive Core Search Bar */}
-              <div className="mt-6 max-w-xl relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                  <Search className="w-5 h-5" />
-                </div>
-                
+              <div className="mt-6 max-w-xl relative flex items-center bg-[#09090b]/80 border border-white/10 rounded-full focus-within:border-red-500/80 focus-within:shadow-[0_0_20px_rgba(239,68,68,0.15)] transition-all duration-500 ease-spring px-4 py-2">
+                <Search className="w-4.5 h-4.5 text-slate-500 mr-3 shrink-0" />
                 <input
                   ref={searchInputRef}
                   type="text"
                   id="marketplace-search-input"
-                  className="w-full bg-[#121215]/90 border-2 border-slate-800 focus:border-red-500 focus:outline-none pl-11 pr-14 py-3 text-xs sm:text-sm text-slate-200 font-sans tracking-wide transition-all"
+                  className="w-full bg-transparent focus:outline-none text-xs sm:text-sm text-slate-200 font-sans tracking-wide"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Pesquisar por áreas jurídicas (ex: multa rescisória, CLT, LGPD, CDC)..."
                 />
-                
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <span className="hidden sm:inline-block font-mono text-[9px] text-slate-500 bg-[#16161a] border border-slate-800 px-1.5 py-0.5 rounded leading-none uppercase">
+                <div className="hidden sm:flex items-center ml-2 shrink-0">
+                  <span className="font-mono text-[9px] text-slate-500 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full leading-none uppercase">
                     Atalho /
                   </span>
                 </div>
@@ -162,55 +161,16 @@ export default function Marketplace({ skillsList, onSelectSkill, onNavigateToLex
               </div>
             </div>
 
-            {/* Right Column: Premium Brutalist Collage Card (5 Cols) portraying the Noble Hall / image_0 */}
-            <div className="lg:col-span-5 hidden lg:block">
-              <div className="relative border-4 border-[#212126] bg-[#0e0e11] p-1.5 shadow-2xl scale-[0.98] hover:scale-100 transition-all duration-500">
-                
-                {/* Decorative retro red technical labels overlay */}
-                <div className="absolute -top-3.5 -left-3 capitalize font-mono text-[9px] bg-red-600 border border-red-500 px-2.5 py-0.5 text-white font-extrabold z-20 shadow-md">
-                  Aula Magna • USP Direito
-                </div>
-
-                <div className="absolute top-2 right-2 font-mono text-[8px] text-red-500 bg-black/60 px-1.5 py-0.5 border border-red-500/30 z-20">
-                  L.S.F. NOBLE_HALL // 1827
-                </div>
-
-                {/* Main USP noble building interior photo */}
-                <div className="relative aspect-[4/3] w-full overflow-hidden bg-black/90">
-                  <img
-                    src="/image_0.png"
-                    alt="Salão Nobre das Arcadas de São Francisco"
-                    referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover opacity-80 filter brightness-90 saturate-50 hover:saturate-100 hover:brightness-100 transition duration-700"
-                  />
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/30 to-transparent p-3 flex justify-between items-end">
-                    <div className="space-y-0.5">
-                      <span className="font-mono text-[9px] text-[#22c55e] block font-semibold">● SECURE_AI_TEMPLATES</span>
-                      <span className="font-mono text-[8px] text-slate-400 block tracking-tighter">SÃO PAULO, BRASIL</span>
-                    </div>
-                    <span className="text-[10px] font-mono text-red-500 font-black">USP_ARCADAS</span>
-                  </div>
-                </div>
-
-                {/* Tech specifications table look under the photo inside the frame */}
-                <div className="mt-2.5 p-2 bg-[#141417] border border-[#202025] grid grid-cols-2 gap-2 text-[10px] font-mono">
-                  <div className="border-r border-slate-800/60 pr-2">
-                    <span className="text-slate-500 block text-[8px] uppercase">Rigor Legal</span>
-                    <span className="text-slate-200">100% Hermenêutica Brasileira</span>
-                  </div>
-                  <div className="pl-1">
-                    <span className="text-slate-500 block text-[8px] uppercase">Base de Conhecimento</span>
-                    <span className="text-slate-200">Súmulas STJ / CPC / CLT</span>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-
           </div>
         </div>
       </div>
 
+      {/* CTA para criar sua própria Skill */}
+      <section className="mt-8 p-6 bg-[#101012] border border-slate-800 rounded-lg text-center">
+        <h2 className="text-xl font-bold text-orange-500 mb-2">Crie e publique suas próprias habilidades com nosso Agente Lex gratuitamente</h2>
+        <p className="text-sm text-slate-300 mb-4">Personalize o agente de IA para o seu trabalho jurídico usando o Lex.</p>
+        <button onClick={onNavigateToLex} className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-500 transition">Ir para o Atelier Lex AI</button>
+      </section>
       {/* SECTION 3: Navegação por área do Direito (VerticalGrid) */}
       <div className="max-w-7xl mx-auto py-12 px-4">
         <div className="flex items-center justify-between border-b border-[#232328] pb-3 mb-6">
@@ -263,123 +223,92 @@ export default function Marketplace({ skillsList, onSelectSkill, onNavigateToLex
         </div>
       </div>
 
-      {/* SECTION 4 & 5: Ecosystem Steps Narrative in 3 Steps */}
-      <div className="max-w-7xl mx-auto py-6 px-4 mb-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-[#0c0c0e] border border-[#232328] p-6">
+      {/* COMPONENTE: Habilidades por Plataforma (Inspired by agentskill.sh) */}
+      <div className="max-w-7xl mx-auto px-4 py-8 border-t border-white/5">
+        <div className="flex items-center gap-2 mb-6">
+          <span className="text-orange-500">💻</span>
+          <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-slate-300">
+            Habilidades por plataforma
+          </h3>
+        </div>
+
+        {/* Grid Principal das 3 Maiores (Claude Code, TessAI, Manus) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           
-          <div className="space-y-2">
-            <div className="flex items-center gap-2.5">
-              <span className="w-6 h-6 rounded-full bg-red-600 text-white font-mono text-xs font-bold flex items-center justify-center">1</span>
-              <h4 className="text-xs uppercase font-mono font-bold tracking-wider text-slate-200">Mapeie sua área de rigor</h4>
+          {/* Claude Code (Maior) */}
+          <div className="bg-[#0c0c0e] border border-white/5 p-5 rounded-2xl flex items-center gap-4 hover:border-orange-500/30 transition-all group">
+            <div className="w-14 h-14 rounded-xl bg-orange-500/10 flex items-center justify-center text-2xl shrink-0 group-hover:scale-105 transition-transform">
+              🤖
             </div>
-            <p className="text-xs text-slate-500 leading-relaxed font-sans">
-              Navegue pelas verticais normativas para entender quais competências e limiares regulatórios estão mapeados para os agentes.
-            </p>
+            <div>
+              <h4 className="font-sans font-bold text-sm text-white">Código Claude</h4>
+              <p className="font-mono text-[10px] text-slate-500">Antrópico · Recomendado</p>
+            </div>
           </div>
 
-          <div className="space-y-2 border-t md:border-t-0 md:border-l border-slate-800 md:pt-0 md:pl-6 pt-4">
-            <div className="flex items-center gap-2.5">
-              <span className="w-6 h-6 rounded-full bg-red-600 text-white font-mono text-xs font-bold flex items-center justify-center">2</span>
-              <h4 className="text-xs uppercase font-mono font-bold tracking-wider text-slate-200">Acompanhe criadores ativos</h4>
+          {/* TessAI (Maior) */}
+          <div className="bg-[#0c0c0e] border border-white/5 p-5 rounded-2xl flex items-center gap-4 hover:border-orange-500/30 transition-all group">
+            <img 
+              src="/logo_tessai.jpg" 
+              alt="TessAI Logo" 
+              className="w-14 h-14 rounded-xl object-cover shrink-0 group-hover:scale-105 transition-transform"
+            />
+            <div>
+              <h4 className="font-sans font-bold text-sm text-white">TessAI</h4>
+              <p className="font-mono text-[10px] text-slate-500">Inteligência Artificial Ativa</p>
             </div>
-            <p className="text-xs text-slate-500 leading-relaxed font-sans">
-              Conheça perfis acadêmicos e centros acadêmicos (como XI de Agosto, Garra-Aberta) parceiros homologados que assinam os arquivos SKILL.md.
-            </p>
           </div>
 
-          <div className="space-y-2 border-t md:border-t-0 md:border-l border-slate-800 md:pt-0 md:pl-6 pt-4">
-            <div className="flex items-center gap-2.5">
-              <span className="w-6 h-6 rounded-full bg-red-600 text-white font-mono text-xs font-bold flex items-center justify-center">3</span>
-              <h4 className="text-xs uppercase font-mono font-bold tracking-wider text-slate-200">Audite os dual scores</h4>
+          {/* Manus (Maior) */}
+          <div className="bg-[#0c0c0e] border border-white/5 p-5 rounded-2xl flex items-center gap-4 hover:border-orange-500/30 transition-all group">
+            <img 
+              src="/logo_manus.png" 
+              alt="Manus Logo" 
+              className="w-14 h-14 rounded-xl object-cover shrink-0 group-hover:scale-105 transition-transform"
+            />
+            <div>
+              <h4 className="font-sans font-bold text-sm text-white">Manus</h4>
+              <p className="font-mono text-[10px] text-slate-500">Agentes Autónomos</p>
             </div>
-            <p className="text-xs text-slate-500 leading-relaxed font-sans">
-              Utilize o Quality Score (parâmetros de prompt) de 0 a 100 e o score de conformidade regulatória para garantir transações corporativas seguras.
-            </p>
           </div>
 
         </div>
-      </div>
 
-      {/* SECTION 5.5: Centro de Tradição, Idealismo e Rigor Técnico (Garra Aberta & Álvares de Azevedo /image_2) */}
-      <div className="max-w-7xl mx-auto py-6 px-4">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 bg-gradient-to-br from-[#09090b] to-[#0d0d10] border-2 border-slate-800 hover:border-red-500/40 transition-all duration-500 p-6 md:p-8 relative overflow-hidden group">
+        {/* Fileiras de Outras Plataformas (Menores) */}
+        <div className="flex flex-wrap items-center gap-3">
           
-          {/* Subtle background gridding effect */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#141417_1px,transparent_1px),linear-gradient(to_bottom,#141417_1px,transparent_1px)] bg-[size:24px_24px] opacity-20 pointer-events-none" />
-          
-          {/* Top layout status tag */}
-          <div className="absolute top-0 right-10 w-3 h-10 bg-red-650 opacity-40 group-hover:bg-red-500 transition-colors pointer-events-none hidden md:block" />
-          <div className="absolute top-4 right-4 font-mono text-[9px] text-slate-600 select-none hidden md:block">
-            REF: XI_DE_AGOSTO_1831_1852
+          {/* OpenAI / ChatGPT */}
+          <div className="bg-[#0c0c0e] border border-white/5 px-4 py-2.5 rounded-xl flex items-center gap-2.5 hover:border-white/10 transition-all">
+            <span className="text-sm">🧠</span>
+            <span className="font-sans text-[11px] text-slate-300">ChatGPT</span>
           </div>
 
-          {/* Left Side: Álvares de Azevedo Statue image representation (/image_2.png) */}
-          <div className="lg:col-span-4 flex justify-center items-center">
-            <div className="relative border-2 border-[#202025] bg-black p-1.5 w-full max-w-[280px] shadow-lg group-hover:border-red-500/50 transition-all duration-500">
-              
-              {/* Retro top tag of the frame */}
-              <div className="absolute -top-3 left-2 font-mono text-[8px] bg-red-650 text-white font-black px-2 py-0.5 tracking-widest uppercase">
-                / GARRA ABERTA /
-              </div>
-
-              {/* Main Statue Image displaying /image_2.png */}
-              <div className="aspect-[3/4.5] overflow-hidden bg-[#101012] relative">
-                <img 
-                  src="/image_2.png" 
-                  alt="Álvares de Azevedo - Símbolo das Arcadas" 
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover opacity-90 filter grayscale contrast-125 saturate-50 group-hover:scale-[1.03] group-hover:grayscale-0 transition-all duration-700"
-                />
-                
-                {/* Tech scan dots overlay on image corner */}
-                <div className="absolute bottom-2 left-2 z-10 bg-black/75 px-1.5 py-0.5 border border-slate-800 text-[8px] font-mono text-slate-400">
-                  ESTÁTUA_ALVARES_DE_AZEVEDO
-                </div>
-              </div>
-
-              {/* Technical description at the footer of the image frame */}
-              <div className="mt-2 text-center text-slate-500 font-mono text-[9px] leading-tight">
-                MONUMENTO NO LARGO DE SÃO FRANCISCO
-              </div>
-            </div>
+          {/* OpenClaw */}
+          <div className="bg-[#0c0c0e] border border-white/5 px-4 py-2.5 rounded-xl flex items-center gap-2.5 hover:border-white/10 transition-all">
+            <span className="text-sm">🦀</span>
+            <span className="font-sans text-[11px] text-slate-300">OpenClaw</span>
           </div>
 
-          {/* Right Side: Narrative about Romantic Idealism, Liberty & Rigorous Legal Prompt Coding */}
-          <div className="lg:col-span-8 flex flex-col justify-between space-y-4 md:pl-4">
-            <div className="space-y-3">
-              <span className="inline-block font-mono text-[9px] text-[#e11d48] font-bold border border-[#e11d48]/40 px-2 py-0.5 uppercase tracking-widest">
-                MEMÓRIA E DOUTRINA
-              </span>
-              
-              <h3 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight uppercase font-sans">
-                O Idealismo das Arcadas na <span className="text-red-500 font-black">Era Algorítmica</span>
-              </h3>
-              
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed font-sans font-light">
-                Fundada em 1827 por Carta de Lei Imperial, a lendária Academia de Direito de São Francisco (USP) formou as mentes que desenharam a República brasileira, as lutas de libertação de ideias e as garantias fundamentais escritas na constituição. 
-              </p>
-              
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed font-sans font-light">
-                O arquivo <code className="text-red-400 font-mono text-xs">SKILL.md</code> representa essa exata tradição de rigor intelectual levada para o universo dos LLMs. Aqui não fazemos meras instruções informais de texto: traduzimos a intenção, a hermenêutica estrita e a poesia de liberdade do poeta acadêmico <strong className="text-slate-200">Álvares de Azevedo (1831-1852)</strong> em parâmetros absolutos e limiares de autonomia para máquinas inteligentes.
-              </p>
-            </div>
+          {/* Outra Logo Encomendada */}
+          <div className="bg-[#0c0c0e] border border-white/5 px-4 py-2.5 rounded-xl flex items-center gap-2.5 hover:border-white/10 transition-all">
+            <img 
+              src="/logo_other.png" 
+              alt="Plataforma Integrada" 
+              className="w-4 h-4 rounded object-cover"
+            />
+            <span className="font-sans text-[11px] text-slate-300">AutoDev</span>
+          </div>
 
-            {/* Brutalist features matrix boxes */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-900 font-mono text-[10px]">
-              <div className="p-2 bg-[#121215] border border-[#202025]">
-                <span className="text-slate-500 block uppercase text-[8px]">Símbolo Cultuado</span>
-                <span className="text-red-400 font-semibold uppercase">Álvares de Azevedo</span>
-              </div>
-              <div className="p-2 bg-[#121215] border border-[#202025]">
-                <span className="text-slate-500 block uppercase text-[8px]">Selo Acadêmico</span>
-                <span className="text-slate-200 font-semibold uppercase">XI de Agosto</span>
-              </div>
-              <div className="p-2 bg-[#121215] border border-[#202025] col-span-2 sm:col-span-1">
-                <span className="text-slate-500 block uppercase text-[8px]">Atitude Intelectual</span>
-                <span className="text-emerald-400 font-semibold uppercase">Anti-Alucinação Estrita</span>
-              </div>
-            </div>
+          {/* Gemini */}
+          <div className="bg-[#0c0c0e] border border-white/5 px-4 py-2.5 rounded-xl flex items-center gap-2.5 hover:border-white/10 transition-all">
+            <span className="text-sm">✨</span>
+            <span className="font-sans text-[11px] text-slate-300">Gemini</span>
+          </div>
 
+          {/* Llama */}
+          <div className="bg-[#0c0c0e] border border-white/5 px-4 py-2.5 rounded-xl flex items-center gap-2.5 hover:border-white/10 transition-all">
+            <span className="text-sm">🦙</span>
+            <span className="font-sans text-[11px] text-slate-300">LlamaIndex</span>
           </div>
 
         </div>
@@ -411,7 +340,7 @@ export default function Marketplace({ skillsList, onSelectSkill, onNavigateToLex
               </label>
               <input
                 type="range"
-                className="w-full filter accent-red-600 h-1 bg-slate-900 rounded-lg cursor-pointer"
+                className="w-full filter accent-red-650 h-1 bg-slate-900 rounded-lg cursor-pointer"
                 min="0"
                 max="95"
                 step="5"
@@ -466,39 +395,6 @@ export default function Marketplace({ skillsList, onSelectSkill, onNavigateToLex
             </div>
 
           </div>
-
-          {/* New Sidebar Card: Chronos / Temporalidade /image_1 */}
-          <div className="border border-[#232328] bg-[#09090b]/90 p-3.5 space-y-3 relative overflow-hidden group">
-            <div className="flex items-center justify-between border-b border-slate-900 pb-1.5">
-              <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#ef4444] flex items-center gap-1">
-                ⌛ TEMPORALIDADE DA LEI
-              </span>
-              <span className="font-mono text-[8px] text-slate-500">UTC-3</span>
-            </div>
-
-            {/* Facade clock and red ornament picture */}
-            <div className="aspect-[4/3] w-full bg-[#121215] overflow-hidden border border-[#212126] relative">
-              <img 
-                src="/image_1.png" 
-                alt="Relógio Histórico da São Francisco" 
-                referrerPolicy="no-referrer"
-                className="w-full h-full object-cover opacity-80 filter brightness-95 grayscale saturate-50 group-hover:scale-105 transition duration-700"
-              />
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/40 to-transparent p-2">
-                <span className="text-[8px] font-mono text-slate-300 block">COMPLIANCE TIMESTAMPS</span>
-              </div>
-            </div>
-
-            <p className="text-[10px] text-slate-400 leading-relaxed font-sans font-light">
-              Nas Arcadas do Largo de São Francisco, o histórico relógio nos ensina que o rigor da lei caminha com o tempo. Nossas skills são auditadas e atualizadas dinamicamente em tempo real.
-            </p>
-
-            <div className="flex justify-between items-center text-[8px] font-mono text-slate-600 pt-1 border-t border-slate-900">
-              <span>SÃO PAULO / BR</span>
-              <span>ESTABILIZADO</span>
-            </div>
-          </div>
-
         </div>
 
         {/* RIGHT SKILLS CATALOG GRID (9 columns) */}
@@ -507,33 +403,65 @@ export default function Marketplace({ skillsList, onSelectSkill, onNavigateToLex
           {/* List parameters bar and view toggle */}
           <div className="border border-[#232328] bg-[#0c0c0e] p-3 flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3 font-mono text-xs">
-              <span className="text-slate-500">Mostrando {Math.min(visibleCount, sortedSkills.length)} de {sortedSkills.length} resultados</span>
+
               
               {/* Reset/Clean active badges indicators query tag */}
               {(selectedVertical || selectedCategory || searchQuery || minQualityScore > 0) && (
                 <div className="flex gap-2 items-center flex-wrap">
-                  <span className="w-1 h-3 bg-red-600" />
+                  <span className="w-1 h-3 bg-red-650" />
                   <span className="text-[10px] text-red-400 uppercase font-bold">Filtros ativos</span>
                 </div>
               )}
+              {/* Show count of results after filters */}
+              <span className="text-slate-400 text-xs ml-2">{filteredSkills.length} skill(s) encontradas</span>
             </div>
 
-            {/* Selector sorter and list mode toggle */}
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1.5 font-mono text-xs">
-                <span className="text-slate-500">Ordenar por:</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
-                  className="bg-[#141417] text-slate-300 border border-slate-800 focus:outline-none focus:border-red-500 text-xs py-1 px-2 font-mono"
-                >
-                  <option value="stars">Popularidade (★)</option>
-                  <option value="recent">Adicionados recentemente</option>
-                  <option value="score">Quality Score 최고</option>
-                </select>
-              </div>
+            {/* Selector sorter tabs (Principal, Tendências, Quente, Mais recente) */}
+            <div className="flex items-center gap-2 flex-wrap font-mono text-xs">
+              <button
+                onClick={() => setSortBy("stars")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
+                  sortBy === "stars"
+                    ? "bg-white/10 text-white font-bold"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                🏆 Principal
+              </button>
+              <button
+                onClick={() => setSortBy("score")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
+                  sortBy === "score"
+                    ? "bg-white/10 text-white font-bold"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                📈 Tendências
+              </button>
+              <button
+                onClick={() => setSortBy("hot")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
+                  sortBy === "hot"
+                    ? "bg-white/10 text-white font-bold"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                🔥 Quente
+              </button>
+              <button
+                onClick={() => setSortBy("recent")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
+                  sortBy === "recent"
+                    ? "bg-white/10 text-white font-bold"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                🕒 Mais recente
+              </button>
+            </div>
 
-              {/* Grid / List Toggler visually */}
+            {/* Grid / List Toggler visually */}
+            <div className="flex items-center gap-3">
               <div className="hidden sm:flex border border-slate-800 rounded bg-[#121214] p-0.5">
                 <button
                   onClick={() => setViewMode("grid")}

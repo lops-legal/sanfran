@@ -1,7 +1,7 @@
 export interface LegalSkill {
   id: string;
   name: string;
-  ownerName: string; // e.g., "XI-de-Agosto", "Garra-Aberta"
+  ownerName: string; // e.g., "são francisco", "Garra-Aberta"
   ownerAvatar: string; // Emoji or short SVG
   description: string;
   markdownContent: string; // The SKILL.md format content
@@ -26,7 +26,16 @@ export interface LegalSkill {
   playgroundTestInput?: string;
   playgroundExpectedOutput?: string;
   playgroundSystemPrompt?: string;
+  authorOrganization?: string;
+  authorProfile?: string;
+  objective?: string;
+  useCase?: string;
+  legalArea?: string;
+  workflow?: string;
+  professionalRole?: string;
+  securityCriteria?: SecurityCriterion[];
 }
+
 
 export interface ChatMessage {
   id: string;
@@ -55,3 +64,10 @@ export interface FaqItem {
   question: string;
   answer: string;
 }
+export interface SecurityCriterion {
+  id: string;
+  description: string;
+  category: string;
+  severity: "low" | "medium" | "high";
+}
+

@@ -1,9 +1,22 @@
 import React, { useState } from "react";
-import { LegalSkill } from "../types";
+import OverviewTab from "./OverviewTab";
+import QualityTab from "./QualityTab";
+import SecurityTab from "./SecurityTab";
+import { LegalSkill } from "../../types";
 import { 
-  ArrowLeft, Copy, Check, Download, Play, 
-  Terminal, ShieldCheck, Scale, AlertTriangle, Info,
-  BookOpen, Layers, Award, Code, CheckCircle
+  ArrowLeft, 
+  Copy, 
+  Check, 
+  Download, 
+  Play, 
+  Terminal, 
+  AlertTriangle, 
+  Info, 
+  BookOpen, 
+  Layers, 
+  Award, 
+  Code, 
+  CheckCircle 
 } from "lucide-react";
 
 interface SkillDetailPageProps {
@@ -17,7 +30,12 @@ export default function SkillDetailPage({ skill, onBack }: SkillDetailPageProps)
   const [testResult, setTestResult] = useState<string>("");
   const [simulating, setSimulating] = useState(false);
   const [simulationError, setSimulationError] = useState("");
-  const [activeTab, setActiveTab] = useState<"SKILL.md" | "INTEGRAÇÃO" | "DADOS">("SKILL.md");
+  
+  // Left tab: "overview" (Visão Geral), "quality" (Qualidade), "security" (Segurança)
+  const [leftTab, setLeftTab] = useState<"overview" | "quality" | "security">("overview");
+  
+  // Right tab: "SKILL.md", "INTEGRAÇÃO" (Como Usar), "DADOS" (Metadados JSON)
+  const [rightTab, setRightTab] = useState<"SKILL.md" | "INTEGRAÇÃO" | "DADOS">("SKILL.md");
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(skill.markdownContent);
@@ -67,10 +85,7 @@ Gere uma resposta formatada em Markdown contendo um diagnóstico técnico robust
     } catch (err: any) {
       console.error(err);
       setSimulationError("Erro ao simular: " + (err.message || err));
-      // Fallback response for offline / missing API key simulation if needed
-      setTestResult(
-        `### ⚖️ DIAGNÓSTICO JURÍDICO SIMULADO (Sem Conexão API)\n\n**Análise baseada na Skill: ${skill.name}**\n\n1. **Resultados de Entrada**: Identificou conflito em face das normas protetivas brasileiras.\n2. **Ação Proposta**: Aplicar auditoria preventiva urgente.\n3. **Fundamentação**: Respeito às diretrizes de conformidade normativa OAB SP.`
-      );
+      setTestResult(`### ⚖️ DIAGNÓSTICO JURÍDICO SIMULADO (Sem Conexão API)\n\n**Análise baseada na Skill: ${skill.name}**\n\n1. **Resultados de Entrada**: Identificou conflito em face das normas protetivas brasileiras.\n2. **Ação Proposta**: Aplicar auditoria preventiva urgente.\n3. **Fundamentação**: Respeito às diretrizes de conformidade normativa OAB SP.`);
     } finally {
       setSimulating(false);
     }
@@ -105,7 +120,7 @@ Gere uma resposta formatada em Markdown contendo um diagnóstico técnico robust
               <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-white font-sans max-w-4xl">
                 {skill.name}
               </h1>
-              <p className="text-slate-400 text-sm mt-2 max-w-3xl">
+              <p className="text-slate-400 text-sm mt-2 max-w-3xl font-sans">
                 Mantido por <span className="text-slate-200 font-semibold">@{skill.ownerName}</span> • Última revisão legislativa em {skill.updatedAt}
               </p>
             </div>
@@ -125,117 +140,60 @@ Gere uma resposta formatada em Markdown contendo um diagnóstico técnico robust
           </div>
         </div>
 
-        {/* Grid split Column */}
+        {/* Grid layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
-          {/* LEFT: Metrics & Simulator (7 cols) */}
+          {/* LEFT COLUMN: Overview, Quality, Security Tabs & Simulator */}
           <div className="lg:col-span-6 space-y-6">
             
-            {/* Dual Score metrics panel */}
+            {/* Tabs selector */}
             <div className="border border-[#1f1f24] bg-[#0c0c0e] p-5">
-              <div className="flex items-center justify-between mb-4 border-b border-slate-900 pb-3">
-                <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-100 flex items-center gap-2">
-                  <Award className="w-4 h-4 text-orange-500" />
-                  Métricas de Pontuação (Dual-Score)
-                </h3>
-                <div className="flex items-center gap-1">
-                  {skill.complianceChecked && (
-                    <span className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[9px] font-mono px-2 py-0.5 rounded flex items-center gap-1 uppercase font-bold">
-                      <CheckCircle className="w-3 h-3" />
-                      Auditoria OAB ativa
-                    </span>
-                  )}
+              <div className="flex justify-between items-center mb-4 border-b border-slate-900 pb-3">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setLeftTab("overview")}
+                    className={`px-3 py-1.5 text-xs font-mono rounded-sm transition-all border ${
+                      leftTab === "overview" 
+                        ? "bg-[#121214] text-orange-400 border-orange-500/30" 
+                        : "bg-[#070708] text-slate-400 border-transparent hover:text-slate-200"
+                    }`}
+                  >
+                    Visão Geral
+                  </button>
+                  <button
+                    onClick={() => setLeftTab("quality")}
+                    className={`px-3 py-1.5 text-xs font-mono rounded-sm transition-all border ${
+                      leftTab === "quality" 
+                        ? "bg-[#121214] text-orange-400 border-orange-500/30" 
+                        : "bg-[#070708] text-slate-400 border-transparent hover:text-slate-200"
+                    }`}
+                  >
+                    Qualidade
+                  </button>
+                  <button
+                    onClick={() => setLeftTab("security")}
+                    className={`px-3 py-1.5 text-xs font-mono rounded-sm transition-all border ${
+                      leftTab === "security" 
+                        ? "bg-[#121214] text-orange-400 border-orange-500/30" 
+                        : "bg-[#070708] text-slate-400 border-transparent hover:text-slate-200"
+                    }`}
+                  >
+                    Segurança
+                  </button>
                 </div>
-              </div>
-
-              {/* Big Score Displays */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-[#121214] p-4 border border-[#27272a] hover:border-orange-500/30 group transition-all">
-                  <span className="text-slate-500 text-[10px] font-mono block uppercase tracking-wider mb-2">Quality Score (Técnico)</span>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-mono font-bold text-orange-400">{skill.qualityScore}</span>
-                    <span className="text-xs text-slate-500 font-mono">/ 100</span>
-                  </div>
-                  <div className="w-full bg-slate-900 h-1 mt-3">
-                    <div className="bg-orange-500 h-1 transition-all" style={{ width: `${skill.qualityScore}%` }} />
-                  </div>
-                </div>
-
-                <div className="bg-[#121214] p-4 border border-[#27272a] hover:border-emerald-500/30 group transition-all">
-                  <span className="text-slate-500 text-[10px] font-mono block uppercase tracking-wider mb-2">Conformidade Normativa</span>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-mono font-bold text-emerald-400">{skill.regulatoryScore}</span>
-                    <span className="text-xs text-slate-500 font-mono">/ 100</span>
-                  </div>
-                  <div className="w-full bg-slate-900 h-1 mt-3">
-                    <div className="bg-emerald-500 h-1 transition-all" style={{ width: `${skill.regulatoryScore}%` }} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Score Breakdown Bars (Radial equivalent) */}
-              <div className="space-y-4">
-                <h4 className="text-[11px] font-mono text-slate-400 uppercase tracking-widest border-b border-slate-900 pb-1.5 font-bold">
-                  Detalhamento da Matriz de Rigor:
-                </h4>
                 
-                <div className="space-y-3">
-                  {/* Item 1 */}
-                  <div>
-                    <div className="flex justify-between text-xs font-mono text-slate-300 mb-1">
-                      <span>• Precisão Normativa (Citações CPC/CDC/CLT)</span>
-                      <span className="font-semibold text-slate-100">{skill.qualityBreakdown.precisaoNormativa}/10</span>
-                    </div>
-                    <div className="w-full bg-[#1b1b1f] h-1.5">
-                      <div className="bg-orange-500 h-1.5" style={{ width: `${skill.qualityBreakdown.precisaoNormativa * 10}%` }} />
-                    </div>
-                  </div>
-
-                  {/* Item 2 */}
-                  <div>
-                    <div className="flex justify-between text-xs font-mono text-slate-300 mb-1">
-                      <span>• Especificidade Operacional</span>
-                      <span className="font-semibold text-slate-100">{skill.qualityBreakdown.especificidade}/10</span>
-                    </div>
-                    <div className="w-full bg-[#1b1b1f] h-1.5">
-                      <div className="bg-orange-500 h-1.5" style={{ width: `${skill.qualityBreakdown.especificidade * 10}%` }} />
-                    </div>
-                  </div>
-
-                  {/* Item 3 */}
-                  <div>
-                    <div className="flex justify-between text-xs font-mono text-slate-300 mb-1">
-                      <span>• Padrão de Entrega Estruturado</span>
-                      <span className="font-semibold text-slate-100">{skill.qualityBreakdown.padraoEntrega}/10</span>
-                    </div>
-                    <div className="w-full bg-[#1b1b1f] h-1.5">
-                      <div className="bg-orange-500 h-1.5" style={{ width: `${skill.qualityBreakdown.padraoEntrega * 10}%` }} />
-                    </div>
-                  </div>
-
-                  {/* Item 4 */}
-                  <div>
-                    <div className="flex justify-between text-xs font-mono text-slate-300 mb-1">
-                      <span>• Limites Claros de Autonomia de IA</span>
-                      <span className="font-semibold text-slate-100">{skill.qualityBreakdown.limitesAutonomia}/10</span>
-                    </div>
-                    <div className="w-full bg-[#1b1b1f] h-1.5">
-                      <div className="bg-emerald-500 h-1.5" style={{ width: `${skill.qualityBreakdown.limitesAutonomia * 10}%` }} />
-                    </div>
-                  </div>
-
-                  {/* Item 5 */}
-                  <div>
-                    <div className="flex justify-between text-xs font-mono text-slate-300 mb-1">
-                      <span>• Histórico de Atualização (Súmulas Atuais)</span>
-                      <span className="font-semibold text-slate-100">{skill.qualityBreakdown.atualizacao}/10</span>
-                    </div>
-                    <div className="w-full bg-[#1b1b1f] h-1.5">
-                      <div className="bg-emerald-500 h-1.5" style={{ width: `${skill.qualityBreakdown.atualizacao * 10}%` }} />
-                    </div>
-                  </div>
-                </div>
+                {skill.complianceChecked && (
+                  <span className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[9px] font-mono px-2 py-0.5 rounded flex items-center gap-1 uppercase font-bold">
+                    <CheckCircle className="w-3 h-3" />
+                    Auditoria OAB ativa
+                  </span>
+                )}
               </div>
+
+              {/* Tab Panel Content */}
+              {leftTab === "overview" && <OverviewTab skill={skill} />}
+              {leftTab === "quality" && <QualityTab skill={skill} />}
+              {leftTab === "security" && <SecurityTab skill={skill} />}
             </div>
 
             {/* INTERACTIVE PLAYGROUND / SIMULATOR */}
@@ -246,7 +204,7 @@ Gere uma resposta formatada em Markdown contendo um diagnóstico técnico robust
                   Simulador de Agente Jurídico (Playground)
                 </h3>
               </div>
-              <p className="text-xs text-slate-400 mb-4 leading-relaxed">
+              <p className="text-xs text-slate-400 mb-4 leading-relaxed font-sans">
                 Cole abaixo um trecho de contrato, notificação, ou resumo factual do seu cliente. Nosso simulador rodará a especificação do <code className="text-orange-400 text-[11px] font-mono">SKILL.md</code> acima usando Inteligência Artificial Lex para gerar o relatório de conformidade exato.
               </p>
 
@@ -254,7 +212,7 @@ Gere uma resposta formatada em Markdown contendo um diagnóstico técnico robust
               <div className="space-y-3">
                 <textarea
                   id="playground-input"
-                  className="w-full h-24 bg-[#121214] border border-[#27272a] p-3 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 font-sans leading-relaxed"
+                  className="w-full h-28 bg-[#121214] border border-[#27272a] p-3 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 font-mono leading-relaxed"
                   value={testInput}
                   onChange={(e) => setTestInput(e.target.value)}
                   placeholder="Ex: Cole aqui a cláusula polêmica de multa ou o horário de trabalho do reclamante."
@@ -280,10 +238,9 @@ Gere uma resposta formatada em Markdown contendo um diagnóstico técnico robust
                     )}
                   </button>
 
-                  {/* Suggest original test pattern trigger */}
                   <button
                     onClick={() => setTestInput(skill.playgroundTestInput || "")}
-                    className="cursor-pointer border border-[#27272a] hover:bg-slate-900 font-mono text-[10px] text-slate-400 px-3 uppercase transition-all"
+                    className="cursor-pointer border border-[#27272a] hover:bg-[#1a1a1f] font-mono text-[10px] text-slate-400 px-3 uppercase transition-all"
                   >
                     Usar caso modelo
                   </button>
@@ -315,7 +272,7 @@ Gere uma resposta formatada em Markdown contendo um diagnóstico técnico robust
             
           </div>
 
-          {/* RIGHT: Code Editor and Specifications (6 cols) */}
+          {/* RIGHT COLUMN: Code Editor and Specifications */}
           <div className="lg:col-span-6 space-y-6">
 
             {/* TAB selector */}
@@ -324,9 +281,9 @@ Gere uma resposta formatada em Markdown contendo um diagnóstico técnico robust
                 
                 {/* Tab 1 */}
                 <button
-                  onClick={() => setActiveTab("SKILL.md")}
+                  onClick={() => setRightTab("SKILL.md")}
                   className={`px-4 py-3 cursor-pointer uppercase tracking-wider border-r border-[#27272a] transition-all flex items-center gap-1.5 ${
-                    activeTab === "SKILL.md" 
+                    rightTab === "SKILL.md" 
                       ? "bg-[#0c0c0e] text-orange-400 font-bold border-t-2 border-t-orange-500" 
                       : "text-slate-400 hover:text-slate-200"
                   }`}
@@ -337,9 +294,9 @@ Gere uma resposta formatada em Markdown contendo um diagnóstico técnico robust
 
                 {/* Tab 2 */}
                 <button
-                  onClick={() => setActiveTab("INTEGRAÇÃO")}
+                  onClick={() => setRightTab("INTEGRAÇÃO")}
                   className={`px-4 py-3 cursor-pointer uppercase tracking-wider border-r border-[#27272a] transition-all flex items-center gap-1.5 ${
-                    activeTab === "INTEGRAÇÃO" 
+                    rightTab === "INTEGRAÇÃO" 
                       ? "bg-[#0c0c0e] text-orange-400 font-bold border-t-2 border-t-orange-500" 
                       : "text-slate-400 hover:text-slate-200"
                   }`}
@@ -350,9 +307,9 @@ Gere uma resposta formatada em Markdown contendo um diagnóstico técnico robust
 
                 {/* Tab 3 */}
                 <button
-                  onClick={() => setActiveTab("DADOS")}
+                  onClick={() => setRightTab("DADOS")}
                   className={`px-4 py-3 cursor-pointer uppercase tracking-wider transition-all flex items-center gap-1.5 ${
-                    activeTab === "DADOS" 
+                    rightTab === "DADOS" 
                       ? "bg-[#0c0c0e] text-orange-400 font-bold border-t-2 border-t-orange-500" 
                       : "text-slate-400 hover:text-slate-200"
                   }`}
@@ -363,7 +320,7 @@ Gere uma resposta formatada em Markdown contendo um diagnóstico técnico robust
               </div>
 
               {/* Tab Content 1: SKILL.md */}
-              {activeTab === "SKILL.md" && (
+              {rightTab === "SKILL.md" && (
                 <div className="p-4">
                   {/* Action row */}
                   <div className="flex items-center justify-between mb-3">
@@ -390,9 +347,9 @@ Gere uma resposta formatada em Markdown contendo um diagnóstico técnico robust
                       <a
                         href={`data:text/markdown;charset=utf-8,${encodeURIComponent(skill.markdownContent)}`}
                         download="SKILL.md"
-                        className="text-xs font-mono text-slate-300 hover:text-orange-400 flex items-center gap-1.5 bg-[#141417] px-3 py-1.5 border border-[#27272a] transition-all"
+                        className="text-xs font-mono text-slate-300 hover:text-orange-400 flex items-center gap-1.5 bg-[#141417] px-3 py-1.5 border border-[#27272a] transition-all text-center inline-block"
                       >
-                        <Download className="w-3.5 h-3.5" />
+                        <Download className="w-3.5 h-3.5 inline" />
                         Baixar .md
                       </a>
                     </div>
@@ -406,10 +363,10 @@ Gere uma resposta formatada em Markdown contendo um diagnóstico técnico robust
               )}
 
               {/* Tab Content 2: INTEGRAÇÃO */}
-              {activeTab === "INTEGRAÇÃO" && (
-                <div className="p-5 space-y-4">
+              {rightTab === "INTEGRAÇÃO" && (
+                <div className="p-5 space-y-4 font-sans">
                   <h3 className="text-sm font-semibold tracking-tight text-white mb-2">Instruções de Importação para seu Agente</h3>
-                  <p className="text-xs text-slate-400 leading-relaxed">
+                  <p className="text-xs text-slate-400 leading-relaxed font-sans">
                     Você pode plugar esta skill jurídica brasileira em qualquer ecossistema de inteligência artificial de mercado. Siga o guia para o seu canal favorito:
                   </p>
 
@@ -442,8 +399,12 @@ Gere uma resposta formatada em Markdown contendo um diagnóstico técnico robust
               )}
 
               {/* Tab Content 3: DADOS DE CONTROLE */}
-              {activeTab === "DADOS" && (
+              {rightTab === "DADOS" && (
                 <div className="p-5">
+                  <div className="border border-[#1f1f24] bg-[#0c0c0e] p-5 mb-5 rounded-sm">
+                    <h3 className="text-sm font-semibold text-white mb-2 font-mono">Extensões Futuras</h3>
+                    <p className="text-xs text-slate-400 font-sans">Aqui poderão ser adicionados componentes avançados, como visualizador de código, editor de integração, etc.</p>
+                  </div>
                   <span className="text-[10px] font-mono text-slate-500 uppercase block mb-3">Formato de Metadados Unificado (JSON)</span>
                   
                   <div className="bg-[#0e0e11] border border-[#1e1e24] p-4 rounded-none font-mono text-[11px] sm:text-xs text-slate-300 max-h-[400px] overflow-y-auto whitespace-pre">
@@ -466,7 +427,7 @@ Gere uma resposta formatada em Markdown contendo um diagnóstico técnico robust
             </div>
 
             {/* Quick Note about standardization */}
-            <div className="bg-[#131110] border border-amber-950/40 p-4 text-xs text-amber-500 flex items-start gap-2.5 font-sans">
+            <div className="bg-[#131110] border border-amber-950/40 p-4 text-xs text-amber-500 flex items-start gap-2.5 font-sans rounded-sm">
               <Info className="w-5 h-5 shrink-0 text-amber-500 mt-0.5" />
               <div>
                 <strong className="block text-amber-400 mb-0.5">Metodologia Sanfran.md</strong>

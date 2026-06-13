@@ -1,10 +1,13 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback, useTransition } from "react";
 import { LegalSkill, ChatMessage } from "../types";
+import { cn } from "../lib/utils";
 import { 
   Send, Upload, Copy, Check, Download,
   Terminal, Sparkles, X, CheckSquare, FileText, PlusCircle,
-  PanelLeft, PanelRight, Paperclip, MessageSquare, Plus, Settings, ChevronRight
+  PanelLeft, PanelRight, Paperclip, MessageSquare, Plus,
+  ChevronRight, ImageIcon, Figma, MonitorIcon, Command, LoaderIcon
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface LexBotProps {
   onPublishSkill: (newSkill: LegalSkill) => void;
@@ -14,31 +17,130 @@ const SAMPLE_DOCS = [
   {
     name: "Contrato_Prestacao_PJ_Lucas.txt",
     type: "Contrato de Prestação de Serviços (Risco de Vínculo)",
-    text: `CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE TECNOLOGIA
-CONTRATANTE: Alpha Solution S.A.
-CONTRATADO: Lucas Cardoso Silva (Desenvolvedor Sênior)
-
-CLÁUSULA TERCEIRA - DA EXCLUSIVIDADE E SUBORDINAÇÃO:
-O Contratado executará as tarefas de desenvolvimento de software em caráter de dedicação exclusiva, não podendo prestar serviços correlatos a nenhuma outra pessoa jurídica concorrente.
-Parágrafo Único: O Contratado Lucas deverá registrar ponto diário em sistema eletrônico da Contratante, cumprindo obrigatoriamente a jornada padrão de segunda a sexta-feira das 9:00 às 18:00, sujeito a penalidades disciplinares e suspensões aplicadas pelo Diretor Técnico.`
+    text: `CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE TECNOLOGIA...`
   },
   {
     name: "Peticao_Consumidor_Celular_Quebrado.txt",
     type: "Petição de Vício de Produto CDC (Urgente)",
-    text: `EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DO JUIZADO ESPECIAL CÍVEL
-AUTORA: Joana D'Arc Ribeiro
-RÉU: Gigante Varejo S.A. e TechCorp Brasil Ltda.
-
-Fatos: A autora comprou um celular no dia 10 de Maio de 2026. Duas semanas após a aquisição, o aparelho parou de carregar completamente de forma súbita. Desesperada e sem celular para trabalhar, a autora resolveu entrar instantaneamente com a presente ação pedindo indenização de R$ 15.000,00 por danos morais, entendendo que não é obrigada a passar pelo balcão da assistência técnica porque o produto é essencial.`
-  },
-  {
-    name: "Termo_Uso_E_Dados_Fintech.txt",
-    type: "Termos de Uso de Aplicativo Financeiro (Regras LGPD)",
-    text: `TERMOS DE USO E POLÍTICA DE PRIVACIDADE - FINPAGO
-Ao baixar o aplicativo, o usuário declara consentimento automático, ilimitado e irrevogável para que a Fintech Finpago trate todos os seus dados pessoais, incluindo endereço residencial, histórico de transações bancárias, cookies de navegador, dados de geolocalização por satélite em tempo real e lista de contatos do telefone celular.
-O compartilhamento desses dados sensíveis com parceiros comerciais e redes multilaterais de publicidade fica pré-aprovado de forma integral e ad eternum para fins de monetização agregada.`
+    text: `EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO...`
   }
 ];
+
+interface CommandSuggestion {
+  icon: React.ReactNode;
+  label: string;
+  description: string;
+  prefix: string;
+}
+
+function useAutoResizeTextarea(minHeight: number, maxHeight?: number) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const adjustHeight = useCallback(
+    (reset?: boolean) => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+
+      if (reset) {
+        textarea.style.height = `${minHeight}px`;
+        return;
+      }
+
+      textarea.style.height = `${minHeight}px`;
+      const newHeight = Math.max(
+        minHeight,
+        Math.min(
+          textarea.scrollHeight,
+          maxHeight ?? Number.POSITIVE_INFINITY
+        )
+      );
+
+      textarea.style.height = `${newHeight}px`;
+    },
+    [minHeight, maxHeight]
+  );
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = `${minHeight}px`;
+    }
+  }, [minHeight]);
+
+  useEffect(() => {
+    const handleResize = () => adjustHeight();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [adjustHeight]);
+
+  return { textareaRef, adjustHeight };
+}
+
+interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  containerClassName?: string;
+  showRing?: boolean;
+}
+
+const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
+  ({ className, containerClassName, showRing = true, ...props }, ref) => {
+    const [isFocused, setIsFocused] = React.useState(false);
+    
+    return (
+      <div className={cn("relative", containerClassName)}>
+        <textarea
+          className={cn(
+            "flex w-full bg-transparent text-sm",
+            "transition-all duration-200 ease-in-out",
+            "placeholder:text-white/20",
+            "disabled:cursor-not-allowed disabled:opacity-50",
+            showRing ? "focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0" : "",
+            className
+          )}
+          ref={ref}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          {...props}
+        />
+        
+        {showRing && isFocused && (
+          <motion.span 
+            className="absolute inset-0 rounded-md pointer-events-none ring-2 ring-offset-0 ring-orange-500/30"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          />
+        )}
+      </div>
+    );
+  }
+);
+Textarea.displayName = "Textarea";
+
+function TypingDots() {
+  return (
+    <div className="flex items-center ml-1">
+      {[1, 2, 3].map((dot) => (
+        <motion.div
+          key={dot}
+          className="w-1.5 h-1.5 bg-white/90 rounded-full mx-0.5"
+          initial={{ opacity: 0.3 }}
+          animate={{ 
+            opacity: [0.3, 0.9, 0.3],
+            scale: [0.85, 1.1, 0.85]
+          }}
+          transition={{
+            duration: 1.2,
+            repeat: Infinity,
+            delay: dot * 0.15,
+            ease: "easeInOut",
+          }}
+          style={{ boxShadow: "0 0 4px rgba(255, 255, 255, 0.3)" }}
+        />
+      ))}
+    </div>
+  );
+}
 
 export default function LexBot({ onPublishSkill }: LexBotProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -49,47 +151,98 @@ export default function LexBot({ onPublishSkill }: LexBotProps) {
   // UI States
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isArtifactOpen, setIsArtifactOpen] = useState(false);
-  
-  // Artifact Workspace state
   const [currentMarkdown, setCurrentMarkdown] = useState<string>("");
   const [publishSuccess, setPublishSuccess] = useState(false);
   
+  // Command Palette States
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [activeSuggestion, setActiveSuggestion] = useState<number>(-1);
+  const [inputFocused, setInputFocused] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const commandPaletteRef = useRef<HTMLDivElement>(null);
+  
+  const { textareaRef, adjustHeight } = useAutoResizeTextarea(44, 200);
+
+  const isTyping = loading;
+
+  const commandSuggestions: CommandSuggestion[] = [
+    { icon: <Sparkles className="w-4 h-4 text-orange-400" />, label: "Gerar Skill", description: "Criar SKILL.md a partir da instrução", prefix: "/skill" },
+    { icon: <FileText className="w-4 h-4 text-emerald-400" />, label: "Auditar Minuta", description: "Encontrar riscos e conformidades", prefix: "/auditar" },
+    { icon: <Terminal className="w-4 h-4 text-slate-400" />, label: "Explicar Termo", description: "Simplificar linguagem jurídica", prefix: "/explicar" },
+    { icon: <PlusCircle className="w-4 h-4 text-fuchsia-400" />, label: "Adicionar Exceção", description: "Adicionar Level 2 na skill gerada", prefix: "@excecao" },
+  ];
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, isTyping]);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  useEffect(() => {
+    if ((inputMessage.startsWith('/') || inputMessage.startsWith('@')) && !inputMessage.includes(' ')) {
+      setShowCommandPalette(true);
+      const matchingIndex = commandSuggestions.findIndex((cmd) => cmd.prefix.startsWith(inputMessage));
+      setActiveSuggestion(matchingIndex >= 0 ? matchingIndex : -1);
+    } else {
+      setShowCommandPalette(false);
+    }
+  }, [inputMessage]);
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      setActiveDoc({
-        name: file.name,
-        text: content
-      });
-      addBotMessage(`✓ Carreguei seu documento local **"${file.name}"**!\nO que você gostaria que eu analisasse nesse arquivo para começarmos a criar sua skill jurídica?`);
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => setMousePosition({ x: e.clientX, y: e.clientY });
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (commandPaletteRef.current && !commandPaletteRef.current.contains(target)) {
+        setShowCommandPalette(false);
+      }
     };
-    reader.readAsText(file);
-    e.target.value = ""; // reset input
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectCommandSuggestion = (index: number) => {
+    const selected = commandSuggestions[index];
+    setInputMessage(selected.prefix + ' ');
+    setShowCommandPalette(false);
+    textareaRef.current?.focus();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (showCommandPalette) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setActiveSuggestion(prev => prev < commandSuggestions.length - 1 ? prev + 1 : 0);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setActiveSuggestion(prev => prev > 0 ? prev - 1 : commandSuggestions.length - 1);
+      } else if (e.key === 'Tab' || e.key === 'Enter') {
+        e.preventDefault();
+        if (activeSuggestion >= 0) {
+          selectCommandSuggestion(activeSuggestion);
+        }
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setShowCommandPalette(false);
+      }
+    } else if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
   };
 
   const addBotMessage = (text: string, markdownDraft?: string) => {
     setMessages((prev) => [
       ...prev,
-      {
-        id: Math.random().toString(),
-        sender: "lex",
-        text: text,
-        generatedSkillMarkdown: markdownDraft
-      }
+      { id: Math.random().toString(), sender: "lex", text: text, generatedSkillMarkdown: markdownDraft }
     ]);
     if (markdownDraft) {
       setCurrentMarkdown(markdownDraft);
-      setIsArtifactOpen(true); // Auto-open artifact when new markdown is generated
+      setIsArtifactOpen(true);
     }
   };
 
@@ -100,6 +253,8 @@ export default function LexBot({ onPublishSkill }: LexBotProps) {
     const userText = inputMessage;
     setInputMessage("");
     setPublishSuccess(false);
+    adjustHeight(true);
+    setShowCommandPalette(false);
 
     setMessages((prev) => [
       ...prev,
@@ -114,16 +269,9 @@ export default function LexBot({ onPublishSkill }: LexBotProps) {
         text: m.text
       }));
 
-      const bodyData: any = {
-        message: userText,
-        history: history
-      };
-
+      const bodyData: any = { message: userText, history: history };
       if (activeDoc) {
-        bodyData.contextDocument = {
-          name: activeDoc.name,
-          text: activeDoc.text
-        };
+        bodyData.contextDocument = { name: activeDoc.name, text: activeDoc.text };
       }
 
       const response = await fetch("/api/lex-chat", {
@@ -132,87 +280,50 @@ export default function LexBot({ onPublishSkill }: LexBotProps) {
         body: JSON.stringify(bodyData)
       });
 
-      if (!response.ok) {
-        throw new Error("Erro de comunicação com o servidor.");
-      }
+      if (!response.ok) throw new Error("Erro de comunicação.");
 
       const data = await response.json();
       addBotMessage(data.text, data.generatedSkillMarkdown);
 
     } catch (err: any) {
       console.error(err);
-      addBotMessage(`🦊 **Ops!**\nErro: ${err.message || "Conexão de rede indisponível."}\n\nPor favor, tente novamente.`);
+      addBotMessage(`🦊 **Ops!**\nErro: ${err.message || "Rede indisponível."}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  const handleLoadSample = (sample: typeof SAMPLE_DOCS[0]) => {
-    setActiveDoc({
-      name: sample.name,
-      text: sample.text
-    });
-    setPublishSuccess(false);
-    
-    if (messages.length === 0) {
-      addBotMessage(`🦊 **Carreguei o arquivo: "${sample.name}"**.\n\nEste texto trata de **${sample.type}**.\n\nDigite abaixo como você quer que eu crie uma skill jurídica a partir dele.`);
-    } else {
-      addBotMessage(`✓ Documento substituído por **"${sample.name}"**.\nO que fazemos agora?`);
-    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setActiveDoc({ name: file.name, text: event.target?.result as string });
+      addBotMessage(`✓ Carreguei seu documento **"${file.name}"**!\nComo você quer analisar esse arquivo?`);
+    };
+    reader.readAsText(file);
+    e.target.value = ""; 
   };
 
   const handlePublish = () => {
     const lines = currentMarkdown.split("\n");
     let title = "Skill Customizada por Lex";
-    let vertical = "Direito Geral";
-    let desc = "Skill jurídica criada via assistente conversacional Lex.";
-    let tags = ["lex", "ai-generated"];
-
     const titleLine = lines.find(line => line.startsWith("# "));
-    if (titleLine) {
-      title = titleLine.replace("# ", "").trim();
-    }
+    if (titleLine) title = titleLine.replace("# ", "").trim();
 
-    const contentLower = currentMarkdown.toLowerCase();
-    if (contentLower.includes("clt") || contentLower.includes("trabalhista")) {
-      vertical = "Trabalhista";
-      tags.push("trabalho", "clt");
-    } else if (contentLower.includes("lgpd") || contentLower.includes("dados")) {
-      vertical = "LGPD";
-      tags.push("lgpd", "dados");
-    } else if (contentLower.includes("cdc") || contentLower.includes("consumidor")) {
-      vertical = "Consumidor";
-      tags.push("cdc", "varejo");
-    } else {
-      vertical = "Processual";
-      tags.push("processo");
-    }
-
-    const goalSectionIdx = lines.findIndex(l => l.includes("## 1. Goal") || l.includes("## Goal"));
-    if (goalSectionIdx !== -1 && lines[goalSectionIdx + 1]) {
-      desc = lines[goalSectionIdx + 1].trim();
-    }
-    if (desc.length > 150) desc = desc.substring(0, 147) + "...";
-
-    const generatedSkill: LegalSkill = {
+    onPublishSkill({
       id: "user-" + Math.random().toString(36).substring(2, 9),
       name: title,
       ownerName: "editor-lex",
       ownerAvatar: "🦊",
-      description: desc,
+      description: "Skill jurídica criada via assistente conversacional Lex.",
       markdownContent: currentMarkdown,
       rating: 5.0,
       reviewCount: 1,
       starsCount: 1,
-      tags: tags,
-      vertical: vertical,
+      tags: ["lex"],
+      vertical: "Direito Geral",
       qualityScore: 95,
       regulatoryScore: 98,
       qualityBreakdown: { precisaoNormativa: 9, especificidade: 10, padraoEntrega: 10, limitesAutonomia: 9, atualizacao: 9 },
@@ -222,96 +333,67 @@ export default function LexBot({ onPublishSkill }: LexBotProps) {
       updatedAt: new Date().toLocaleDateString("pt-BR"),
       authorOrganization: "Lex AI Atelier",
       authorProfile: "#",
-      objective: "Análise automatizada gerada por inteligência artificial.",
-      useCase: "Auditar conformidade jurídica do caso inserido.",
+      objective: "Análise gerada por IA.",
+      useCase: "Auditar conformidade jurídica.",
       legalArea: "Geral",
       workflow: "Análise automática",
       professionalRole: "Advogado / Analista",
       securityCriteria: [],
-    };
-
-    onPublishSkill(generatedSkill);
+    });
     setPublishSuccess(true);
   };
 
-  const handleExportMarkdown = () => {
-    const element = document.createElement("a");
-    const file = new Blob([currentMarkdown], {type: 'text/markdown'});
-    element.href = URL.createObjectURL(file);
-    element.download = "SKILL.md";
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-  };
-
   return (
-    <div className="flex h-[calc(100vh-76px)] bg-[#09090b] text-slate-200 overflow-hidden font-sans">
+    <div className="flex h-[calc(100vh-76px)] bg-[#050505] text-slate-200 overflow-hidden font-sans relative">
       
-      {/* 1. LEFT SIDEBAR (Claude-style history) */}
-      <div 
-        className={`${isSidebarOpen ? "w-[260px] md:w-[300px]" : "w-0"} flex-shrink-0 transition-all duration-300 ease-in-out bg-[#0c0c0e] border-r border-[#1f1f24] flex flex-col`}
-      >
+      {/* GLOW BACKGROUNDS */}
+      <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-500/10 rounded-full mix-blend-normal filter blur-[128px] animate-pulse" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-emerald-500/10 rounded-full mix-blend-normal filter blur-[128px] animate-pulse delay-700" />
+        {inputFocused && (
+          <motion.div 
+            className="absolute w-[50rem] h-[50rem] rounded-full pointer-events-none z-0 opacity-[0.02] bg-gradient-to-r from-orange-500 via-amber-500 to-emerald-500 blur-[96px]"
+            animate={{ x: mousePosition.x - 400, y: mousePosition.y - 400 }}
+            transition={{ type: "spring", damping: 25, stiffness: 150, mass: 0.5 }}
+          />
+        )}
+      </div>
+
+      {/* 1. LEFT SIDEBAR */}
+      <div className={`${isSidebarOpen ? "w-[260px] md:w-[280px]" : "w-0"} flex-shrink-0 transition-all duration-300 ease-in-out bg-[#0A0A0C]/80 backdrop-blur-md border-r border-white/5 flex flex-col z-10`}>
         <div className="p-4 flex-1 overflow-y-auto">
           <button 
-            onClick={() => {
-              setMessages([]);
-              setActiveDoc(null);
-              setCurrentMarkdown("");
-              setIsArtifactOpen(false);
-            }}
-            className="w-full flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-lg py-2.5 px-4 font-medium transition-colors text-sm"
+            onClick={() => { setMessages([]); setActiveDoc(null); setCurrentMarkdown(""); setIsArtifactOpen(false); }}
+            className="w-full flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white rounded-lg py-2.5 px-4 font-medium transition-colors text-sm shadow-sm border border-white/10"
           >
             <Plus className="w-4 h-4" />
             Nova Sessão
           </button>
-
           <div className="mt-8">
-            <h3 className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-2 mb-3">Histórico Recente</h3>
-            <div className="space-y-0.5">
-              <button className="w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-lg bg-[#18181b] text-orange-400 border border-[#27272a] text-sm">
+            <h3 className="text-[10px] font-semibold text-white/40 uppercase tracking-wider px-2 mb-3">Histórico Recente</h3>
+            <div className="space-y-1">
+              <button className="w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white/5 text-orange-400 border border-white/5 text-sm">
                 <MessageSquare className="w-3.5 h-3.5" />
                 <span className="truncate">Criação de Skill CDC</span>
-              </button>
-              <button className="w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-[#18181b] text-slate-400 hover:text-slate-200 transition-colors text-sm">
-                <MessageSquare className="w-3.5 h-3.5" />
-                <span className="truncate">Auditoria Contrato PJ</span>
               </button>
             </div>
           </div>
         </div>
-
-        <div className="p-4 border-t border-[#1f1f24]">
-          <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#18181b] text-slate-400 hover:text-slate-200 transition-colors text-sm">
-            <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-xs">LC</div>
-            <span className="truncate font-medium">Lucas Cardoso</span>
-          </button>
-        </div>
       </div>
 
       {/* 2. MAIN CHAT AREA */}
-      <div className="flex-1 flex flex-col min-w-0 relative bg-[#09090b]">
+      <div className="flex-1 flex flex-col min-w-0 relative z-10">
         
         {/* Top Header */}
-        <div className="h-14 flex-shrink-0 flex items-center justify-between px-4">
+        <div className="h-14 flex-shrink-0 flex items-center justify-between px-4 border-b border-white/5">
           <div className="flex items-center gap-2">
-            <button 
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 -ml-2 text-slate-400 hover:text-slate-200 rounded-md hover:bg-[#18181b] transition-colors"
-            >
+            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 -ml-2 text-white/40 hover:text-white/90 rounded-md transition-colors">
               <PanelLeft className="w-5 h-5" />
             </button>
-            <span className="font-semibold text-slate-100 flex items-center gap-2">
-              Lex AI
-              <span className="text-[9px] font-mono text-orange-400 border border-orange-500/30 px-1.5 py-0.5 rounded-full bg-orange-500/5 uppercase tracking-widest leading-none">Beta</span>
-            </span>
+            <span className="font-semibold text-slate-100 flex items-center gap-2">Lex AI</span>
           </div>
-
           {currentMarkdown && (
-            <button 
-              onClick={() => setIsArtifactOpen(!isArtifactOpen)}
-              className={`p-2 text-slate-400 hover:text-slate-200 rounded-md hover:bg-[#18181b] transition-colors ${isArtifactOpen ? 'text-orange-400 bg-orange-400/10' : ''}`}
-              title="Abrir Editor da Skill"
-            >
+            <button onClick={() => setIsArtifactOpen(!isArtifactOpen)} className={`p-2 rounded-md transition-colors ${isArtifactOpen ? 'text-orange-400 bg-orange-400/10' : 'text-white/40 hover:text-white/90'}`}>
               <PanelRight className="w-5 h-5" />
             </button>
           )}
@@ -320,203 +402,170 @@ export default function LexBot({ onPublishSkill }: LexBotProps) {
         {/* Chat Scroll Area */}
         <div className="flex-1 overflow-y-auto px-4 pb-32">
           <div className="max-w-3xl mx-auto w-full pt-8 pb-4">
-            
             {messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full mt-20 animate-fade-up-heavy">
-                <div className="w-16 h-16 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-3xl mb-6 shadow-[0_0_30px_rgba(249,115,22,0.1)]">
-                  🦊
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center justify-center h-full mt-20">
+                <div className="text-center space-y-3 mb-10">
+                  <h1 className="text-3xl font-medium tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white/90 to-white/40 pb-1">
+                    Como a Lex pode ajudar?
+                  </h1>
+                  <p className="text-sm text-white/40">Digite um comando com '/' ou faça uma pergunta livre.</p>
                 </div>
-                <h2 className="text-2xl font-semibold text-slate-100 mb-2">Como posso ajudar?</h2>
-                <p className="text-slate-400 text-sm mb-8 text-center max-w-md">
-                  Sou a Lex. Posso criar diretrizes de auditoria (SKILL.md) analisando documentos, leis ou seu pedido direto.
-                </p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl">
-                  {SAMPLE_DOCS.slice(0, 2).map((doc, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => handleLoadSample(doc)}
-                      className="text-left p-4 rounded-xl border border-[#27272a] bg-[#18181b] hover:border-orange-500/50 hover:bg-[#18181b]/80 transition-all group"
-                    >
-                      <span className="font-medium text-slate-200 block mb-1 text-sm">{doc.type.split(" (")[0]}</span>
-                      <span className="text-xs text-slate-500 block truncate group-hover:text-slate-400">{doc.name}</span>
-                    </button>
+                <div className="flex flex-wrap items-center justify-center gap-3 max-w-2xl">
+                  {commandSuggestions.map((suggestion, idx) => (
+                    <motion.button key={idx} onClick={() => selectCommandSuggestion(idx)} className="flex items-center gap-2 px-4 py-2.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-sm text-white/70 hover:text-white/90 transition-all border border-white/5" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }}>
+                      {suggestion.icon}
+                      <span>{suggestion.label}</span>
+                    </motion.button>
                   ))}
                 </div>
-              </div>
+              </motion.div>
             ) : (
               <div className="space-y-8">
                 {messages.map((msg) => (
                   <div key={msg.id} className={`flex w-full ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
-                    
-                    {msg.sender === "lex" && (
-                      <div className="w-8 h-8 rounded-full bg-orange-600/20 border border-orange-500/30 flex items-center justify-center text-sm shrink-0 mr-4 mt-1">
-                        🦊
-                      </div>
-                    )}
-                    
-                    <div className={`max-w-[85%] ${
-                      msg.sender === "user" 
-                        ? "bg-[#27272a] text-slate-100 px-5 py-3.5 rounded-2xl rounded-tr-sm text-[15px] shadow-sm leading-relaxed" 
-                        : "text-slate-200 text-[15px] leading-relaxed pt-1.5"
-                    }`}>
+                    {msg.sender === "lex" && <div className="w-8 h-8 rounded-full bg-orange-600/20 border border-orange-500/30 flex items-center justify-center text-sm shrink-0 mr-4 mt-1">🦊</div>}
+                    <div className={`max-w-[85%] ${msg.sender === "user" ? "bg-white/10 text-white px-5 py-3.5 rounded-2xl rounded-tr-sm text-[15px] shadow-sm backdrop-blur-md" : "text-slate-200 text-[15px] leading-relaxed pt-1.5"}`}>
                       <div className="whitespace-pre-wrap font-light">{msg.text}</div>
-                      
                       {msg.generatedSkillMarkdown && !isArtifactOpen && (
-                        <button 
-                          onClick={() => setIsArtifactOpen(true)}
-                          className="mt-4 flex items-center gap-2 px-4 py-2.5 bg-[#18181b] hover:bg-[#27272a] border border-[#27272a] rounded-lg text-sm text-slate-300 transition-colors group"
-                        >
-                          <Terminal className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+                        <button onClick={() => setIsArtifactOpen(true)} className="mt-4 flex items-center gap-2 px-4 py-2.5 bg-white/[0.05] hover:bg-white/10 border border-white/10 rounded-lg text-sm text-white transition-colors">
+                          <Terminal className="w-4 h-4 text-emerald-400" />
                           <span className="font-medium">Abrir Rascunho SKILL.md</span>
-                          <ChevronRight className="w-4 h-4 text-slate-500 ml-auto" />
                         </button>
                       )}
                     </div>
                   </div>
                 ))}
-                
-                {loading && (
-                  <div className="flex w-full justify-start">
-                    <div className="w-8 h-8 rounded-full bg-orange-600/20 border border-orange-500/30 flex items-center justify-center text-sm shrink-0 mr-4 mt-1 animate-pulse">
-                      🦊
-                    </div>
-                    <div className="text-slate-400 text-sm pt-2.5 flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-bounce" style={{animationDelay: "0ms"}} />
-                      <div className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-bounce" style={{animationDelay: "150ms"}} />
-                      <div className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-bounce" style={{animationDelay: "300ms"}} />
-                    </div>
-                  </div>
-                )}
-                
-                <div ref={messagesEndRef} />
               </div>
             )}
+            <div ref={messagesEndRef} />
           </div>
         </div>
 
-        {/* Bottom Input Area */}
-        <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-[#09090b] via-[#09090b] to-transparent pt-10 pb-6 px-4">
+        {/* Bottom Input Area - Animated */}
+        <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-[#050505] via-[#050505]/80 to-transparent pt-12 pb-6 px-4">
           <div className="max-w-3xl mx-auto relative">
-            
-            {activeDoc && (
-              <div className="absolute -top-10 left-0 flex items-center gap-2 bg-[#18181b] border border-[#27272a] px-3 py-1.5 rounded-full text-xs text-slate-300 shadow-md">
-                <FileText className="w-3.5 h-3.5 text-orange-400" />
-                <span className="truncate max-w-[150px] sm:max-w-[250px]">{activeDoc.name}</span>
-                <button onClick={() => setActiveDoc(null)} className="ml-1 text-slate-500 hover:text-red-400">
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
-
-            <form 
-              onSubmit={handleSendMessage} 
-              className="bg-[#18181b] border border-[#27272a] rounded-2xl p-2.5 flex items-end gap-2 shadow-2xl focus-within:border-orange-500/50 transition-colors"
+            <motion.div 
+              className="relative backdrop-blur-2xl bg-white/[0.03] rounded-2xl border border-white/[0.08] shadow-2xl"
+              initial={{ scale: 0.98 }} animate={{ scale: 1 }}
             >
-              <div className="relative shrink-0">
-                <input
-                  type="file"
-                  id="file-upload"
-                  className="hidden"
-                  onChange={handleFileUpload}
-                  accept=".txt,.md,.json"
+              <AnimatePresence>
+                {showCommandPalette && (
+                  <motion.div 
+                    ref={commandPaletteRef}
+                    className="absolute left-0 right-0 bottom-full mb-2 backdrop-blur-xl bg-black/90 rounded-xl z-50 shadow-2xl border border-white/10 overflow-hidden"
+                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
+                  >
+                    <div className="py-2">
+                      {commandSuggestions.map((suggestion, index) => (
+                        <div
+                          key={suggestion.prefix}
+                          className={cn("flex items-center gap-3 px-4 py-2.5 text-sm transition-colors cursor-pointer", activeSuggestion === index ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5")}
+                          onClick={() => selectCommandSuggestion(index)}
+                        >
+                          {suggestion.icon}
+                          <div className="font-medium">{suggestion.label}</div>
+                          <div className="text-white/40 text-xs ml-auto font-mono">{suggestion.prefix}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {activeDoc && (
+                <div className="px-4 pt-3 flex gap-2 flex-wrap">
+                  <div className="flex items-center gap-2 text-xs bg-white/[0.05] py-1.5 px-3 rounded-lg text-white/80 border border-white/10">
+                    <FileText className="w-3.5 h-3.5 text-orange-400" />
+                    <span className="truncate max-w-[200px]">{activeDoc.name}</span>
+                    <button onClick={() => setActiveDoc(null)} className="text-white/40 hover:text-white transition-colors ml-1"><X className="w-3 h-3" /></button>
+                  </div>
+                </div>
+              )}
+
+              <div className="p-4 flex items-end gap-3">
+                <div className="relative shrink-0 mb-1">
+                  <input type="file" id="file-upload" className="hidden" onChange={handleFileUpload} accept=".txt,.md,.json" />
+                  <label htmlFor="file-upload" className="w-9 h-9 rounded-xl flex items-center justify-center text-white/40 hover:text-white/90 hover:bg-white/10 cursor-pointer transition-colors">
+                    <Paperclip className="w-5 h-5" />
+                  </label>
+                </div>
+                
+                <Textarea
+                  ref={textareaRef}
+                  value={inputMessage}
+                  onChange={(e) => { setInputMessage(e.target.value); adjustHeight(); }}
+                  onKeyDown={handleKeyDown}
+                  onFocus={() => setInputFocused(true)}
+                  onBlur={() => setInputFocused(false)}
+                  placeholder="Instrua a Lex, use '/' para comandos..."
+                  className="min-h-[44px] text-[15px] border-none px-0 py-2.5 text-white/90"
+                  showRing={false}
+                  disabled={loading}
                 />
-                <label 
-                  htmlFor="file-upload"
-                  className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-200 hover:bg-[#27272a] cursor-pointer transition-colors"
-                  title="Anexar documento de apoio"
+                
+                <motion.button
+                  onClick={handleSendMessage}
+                  disabled={isTyping || !inputMessage.trim()}
+                  whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                  className={cn(
+                    "w-10 h-10 shrink-0 mb-1 rounded-xl flex items-center justify-center transition-all",
+                    inputMessage.trim() && !loading ? "bg-orange-600 text-white shadow-[0_0_15px_rgba(249,115,22,0.4)]" : "bg-white/[0.05] text-white/30 cursor-not-allowed"
+                  )}
                 >
-                  <Paperclip className="w-4.5 h-4.5" />
-                </label>
+                  {isTyping ? <LoaderIcon className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4 ml-0.5" />}
+                </motion.button>
               </div>
-              
-              <textarea
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={activeDoc ? "Instrua a Lex sobre o documento anexo..." : "Peça para gerar ou auditar uma regra jurídica..."}
-                className="flex-1 bg-transparent border-none focus:outline-none text-slate-200 text-[15px] resize-none py-1.5 max-h-[200px] min-h-[44px] overflow-y-auto scrollbar-thin placeholder:text-slate-500"
-                rows={1}
-                disabled={loading}
-              />
-              
-              <button
-                type="submit"
-                disabled={loading || !inputMessage.trim()}
-                className={`w-9 h-9 shrink-0 rounded-xl flex items-center justify-center transition-all ${
-                  inputMessage.trim() && !loading 
-                    ? "bg-orange-600 text-white hover:bg-orange-500 shadow-lg" 
-                    : "bg-[#27272a] text-slate-500 cursor-not-allowed"
-                }`}
-              >
-                <Send className="w-4 h-4 ml-0.5" />
-              </button>
-            </form>
-            <div className="text-center mt-2">
-              <span className="text-[10px] text-slate-500">Lex pode cometer erros de formatação. Verifique a Skill antes de publicar.</span>
-            </div>
+            </motion.div>
           </div>
         </div>
+        
+        <AnimatePresence>
+          {isTyping && (
+            <motion.div 
+              className="fixed bottom-[140px] left-1/2 transform -translate-x-1/2 backdrop-blur-2xl bg-white/[0.05] rounded-full px-5 py-2.5 shadow-2xl border border-white/10 z-50 flex items-center gap-3"
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
+            >
+              <div className="w-6 h-6 rounded-full bg-orange-500/20 flex items-center justify-center text-xs">🦊</div>
+              <div className="flex items-center gap-2 text-sm text-white/70 font-medium">
+                <span>Lex está analisando</span>
+                <TypingDots />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
       </div>
 
-      {/* 3. RIGHT ARTIFACT PANEL (Editor) */}
-      <div 
-        className={`${isArtifactOpen ? "w-[400px] lg:w-[480px]" : "w-0"} flex-shrink-0 transition-all duration-300 ease-in-out bg-[#0c0c0e] border-l border-[#1f1f24] flex flex-col z-10 shadow-2xl overflow-hidden`}
-      >
-        {/* Artifact Header */}
-        <div className="h-14 border-b border-[#1f1f24] flex items-center justify-between px-4 flex-shrink-0 bg-[#0c0c0e]">
-          <div className="flex items-center gap-2 overflow-hidden">
+      {/* 3. RIGHT ARTIFACT PANEL */}
+      <div className={`${isArtifactOpen ? "w-[400px] lg:w-[480px]" : "w-0"} flex-shrink-0 transition-all duration-300 ease-in-out bg-[#0A0A0C]/90 backdrop-blur-xl border-l border-white/5 flex flex-col z-20 overflow-hidden`}>
+        <div className="h-14 border-b border-white/5 flex items-center justify-between px-4">
+          <div className="flex items-center gap-2">
             <Terminal className="w-4 h-4 text-orange-500 shrink-0" />
-            <span className="font-mono text-xs font-semibold text-slate-200 truncate">
-              Editor de Rascunho
-            </span>
+            <span className="font-mono text-xs font-semibold text-white/90">Editor SKILL.md</span>
           </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <button 
-              onClick={handleExportMarkdown}
-              className="p-1.5 text-slate-400 hover:text-white rounded-md hover:bg-[#18181b] transition-colors"
-              title="Baixar Markdown"
-            >
-              <Download className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={() => setIsArtifactOpen(false)}
-              className="p-1.5 text-slate-400 hover:text-white rounded-md hover:bg-[#18181b] transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
+          <div className="flex items-center gap-1">
+            <button onClick={() => setIsArtifactOpen(false)} className="p-1.5 text-white/40 hover:text-white rounded-md hover:bg-white/10 transition-colors"><X className="w-4 h-4" /></button>
           </div>
         </div>
-
-        {/* Artifact Body */}
-        <div className="flex-1 flex flex-col overflow-hidden relative">
+        <div className="flex-1 flex flex-col relative">
           <textarea
-            className="flex-1 w-full bg-[#0c0c0e] text-slate-300 font-mono text-[13px] leading-relaxed p-5 focus:outline-none resize-none scrollbar-thin"
+            className="flex-1 w-full bg-transparent text-white/80 font-mono text-[13px] leading-relaxed p-5 focus:outline-none resize-none scrollbar-thin"
             value={currentMarkdown}
-            onChange={(e) => {
-              setCurrentMarkdown(e.target.value);
-              setPublishSuccess(false);
-            }}
-            placeholder="O código SKILL.md gerado aparecerá aqui..."
+            onChange={(e) => { setCurrentMarkdown(e.target.value); setPublishSuccess(false); }}
           />
-          
-          {/* Action Bar at bottom */}
-          <div className="p-4 border-t border-[#1f1f24] bg-[#0c0c0e]">
+          <div className="p-4 border-t border-white/5">
             {publishSuccess ? (
-              <div className="bg-emerald-950/20 border border-emerald-900/60 p-3 text-xs text-emerald-400 rounded-lg flex items-start gap-2.5">
-                <CheckSquare className="w-4 h-4 shrink-0 text-emerald-400 mt-0.5" />
-                <div>
-                  <strong className="block font-medium">Skill Publicada!</strong>
-                  Ela já está disponível no catálogo de pesquisa.
-                </div>
+              <div className="bg-emerald-500/10 border border-emerald-500/20 p-3 text-xs text-emerald-400 rounded-xl flex items-center gap-2.5">
+                <CheckSquare className="w-4 h-4" />
+                <span className="font-medium">Skill Publicada com Sucesso!</span>
               </div>
             ) : (
               <button
                 onClick={handlePublish}
                 disabled={!currentMarkdown}
-                className="w-full bg-orange-600 hover:bg-orange-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2.5 px-4 rounded-lg font-medium text-sm transition-all flex items-center justify-center gap-2"
+                className="w-full bg-white/10 hover:bg-white/20 text-white py-3 px-4 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 border border-white/5 shadow-lg"
               >
-                <PlusCircle className="w-4 h-4" />
+                <PlusCircle className="w-4 h-4 text-orange-400" />
                 Publicar no Catálogo
               </button>
             )}

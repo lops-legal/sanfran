@@ -1,4 +1,5 @@
 import { LegalSkill, VerticalCategory, TaskCategory, FaqItem } from "./types";
+import { SECURITY_CRITERIA } from "./constants/security";
 
 export const VERTICALS: VerticalCategory[] = [
   {

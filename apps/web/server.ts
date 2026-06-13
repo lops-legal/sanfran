@@ -1,4 +1,6 @@
 import express from "express";
+import cron from "node-cron";
+import { requireRole } from "./middleware/rbac";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
@@ -59,6 +61,19 @@ Seja inteligente, use termos de design e detalhes técnicos refinados do Direito
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", time: new Date().toISOString() });
 });
+
+// Account deletion endpoint – placeholder implementation with RBAC
+app.delete("/api/account/delete", requireRole(["user", "admin"]), (req, res) => {
+  const { userId } = req.body;
+  if (!userId) {
+    return res.status(400).json({ error: "userId is required" });
+  }
+  // Here you would perform actual deletion from DB, remove files, etc.
+  console.log(`Account deletion requested for userId=${userId}`);
+  // Simulate success response
+  return res.json({ status: "deleted", userId });
+});
+
 
 // Lex Chat chatbot endpoint
 app.post("/api/lex-chat", async (req, res) => {
@@ -293,7 +308,20 @@ Verificar de forma automática se termos de uso e políticas de privacidade cont
   });
 }
 
+/* Scheduled retention job – runs daily at midnight */
+cron.schedule('0 0 * * *', () => {
+  const { execSync } = require('child_process');
+  try {
+    console.log('Running retention job (daily)...');
+    execSync('bash ../scripts/retention_job.sh', { stdio: 'inherit' });
+    console.log('Retention job completed.');
+  } catch (err) {
+    console.error('Retention job failed', err);
+  }
+});
+
 // Vite middleware development setup or static serving in production
+
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     console.log("Starting server in DEVELOPMENT mode with Vite Middleware.");
