@@ -89,6 +89,13 @@ export const MOCK_SKILLS: LegalSkill[] = [
     regulatoryScore: 100,
     complianceChecked: true,
     regulatoryIssues: 0,
+    qualityBreakdown: {
+      precisaoNormativa: 10,
+      especificidade: 9,
+      padraoEntrega: 10,
+      limitesAutonomia: 9,
+      atualizacao: 9
+    },
     markdownContent: `# Skill Jurídica: Validador de Petição Inicial Consumidora (CDC)
 ## 1. Goal
 Validar petições iniciais de direito do consumidor antes do protocolo, garantindo preenchimento dos requisitos do Art. 319 do CPC e pedidos mandatórios de inversão do ônus da prova.
@@ -118,15 +125,7 @@ Exemplo de e‑mail ou rascunho de contestação ou inicial que queira auditar.
 
 ### Output
 Lista de pendências jurídicas com as referências exatas do CDC e CPC correspondentes.`,
-    qualityBreakdown: {
-      precisaoNormativa: 10,
-      especificidade: 9,
-      padraoEntrega: 10,
-      limitesAutonomia: 9,
-      atualizacao: 9
-    },
     playgroundTestInput: "Entrei com ação contra fabricante do meu celular que quebrou após 2 meses. Pedi R$ 10.000,00 de danos morais de forma rápida e sumária. Não cheguei a procurar a fabricante porque estava muito irritado com o ocorrido.",
     playgroundExpectedOutput: "Aviso: Há alto risco de extinção sem resolução do mérito por falta de interesse processual se o vício de produto for alegado judicialmente antes de oportunizar o prazo legal de 30 dias para a fabricante resolver o problema (Art. 18, §1º do CDC). Recomenda-se realizar reclamação administrativa prévia via consumidor.gov.br."
-  }
-  // ... additional mock skills can follow
+  },
 ];

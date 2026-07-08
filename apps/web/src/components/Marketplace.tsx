@@ -475,7 +475,7 @@ export default function Marketplace({ onSelectSkill }: MarketplaceProps) {
             activeFilterCount > 0 ? (
               <EmptyFilteredState onClear={handleClearFilters} />
             ) : (
-              <EmptyCatalogState />
+              <EmptyCatalogState onCreate={() => setShowCreateModal(true)} />
             )
           ) : (
             <>

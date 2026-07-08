@@ -1,0 +1,9 @@
+# Environment files
+.env
+.env.*
+*.env
+*.env.example
+# Secret directories
+banco/skills/
+# Node modules (optional)
+node_modules/

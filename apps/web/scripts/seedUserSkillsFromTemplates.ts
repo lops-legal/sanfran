@@ -39,7 +39,7 @@ async function upsertSkillForUser(userId: string, slug: string, markdown: string
     rating: 0,
   } as any;
 
-  const { error } = await supabase.from("skills").upsert(skill, { onConflict: ["author_id", "slug"] });
+  const { error } = await supabase.from("skills").upsert(skill, { onConflict: "author_id,slug" });
   if (error) console.error(`❌ erro ao inserir skill ${slug} para ${userId}:`, error.message);
   else console.log(`✅ skill ${slug} inserida/atualizada para ${userId}`);
 }
