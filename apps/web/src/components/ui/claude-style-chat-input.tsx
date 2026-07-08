@@ -231,15 +231,14 @@ export default function ClaudeChatInput({ onSendMessage, isLoading }: ClaudeChat
     const [files, setFiles] = useState<AttachedFile[]>([]);
     const [pastedContent, setPastedContent] = useState<AttachedFile[]>([]);
     const [isDragging, setIsDragging] = useState(false);
-    const [selectedModel, setSelectedModel] = useState("lex-v1");
+    const [selectedModel, setSelectedModel] = useState("standard");
     const [isThinkingEnabled, setIsThinkingEnabled] = useState(false);
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const models = [
-        { id: "lex-v1", name: "Lex Engine", description: "Otimizado para direito brasileiro", badge: "Beta" },
-        { id: "lex-flash", name: "Lex Flash", description: "Respostas rápidas" }
+        { id: "standard", name: "Standard Model", description: "Modelo padrão de IA", badge: "Stable" }
     ];
 
     useEffect(() => {

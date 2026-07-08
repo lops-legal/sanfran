@@ -1,120 +1,177 @@
 import React from "react";
 import { LegalSkill } from "../types";
-import { Star, GitFork, Wrench, ShieldCheck, ArrowUpRight } from "lucide-react";
+import { Star, GitFork, ShieldCheck, ArrowUpRight, Download } from "lucide-react";
 
 interface SkillCardProps {
   skill: LegalSkill;
   onSelect: (skill: LegalSkill) => void;
-  key?: string | number;
+  featured?: boolean;
 }
 
-export default function SkillCard({ skill, onSelect }: SkillCardProps) {
-  // Score 1 color styling (Quality)
-  const getQualityStyle = (score: number) => {
-    if (score >= 90) {
-      return "bg-emerald-500/10 border-emerald-500/20 text-emerald-400";
-    }
-    if (score >= 75) {
-      return "bg-amber-500/10 border-amber-500/20 text-amber-400";
-    }
-    return "bg-red-500/10 border-red-500/20 text-red-400";
-  };
+function QualityBar({ score }: { score: number }) {
+  const color = score >= 90 ? "bg-emerald-500" : score >= 75 ? "bg-amber-500" : "bg-red-500";
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
+        <div className={`h-full ${color} rounded-full transition-all duration-700`} style={{ width: `${score}%` }} />
+      </div>
+      <span className="font-mono text-[10px] text-muted tabular-nums w-6 text-right">{score}</span>
+    </div>
+  );
+}
 
-  // Score 2 color styling (Regulatory Compliance)
-  const getRegulatoryStyle = (score: number) => {
-    if (score >= 90) {
-      return "bg-emerald-500/10 border-emerald-500/20 text-emerald-400";
-    }
-    if (score >= 75) {
-      return "bg-amber-500/10 border-amber-500/20 text-amber-400";
-    }
-    return "bg-red-500/10 border-red-500/20 text-red-400";
+function VerticalPill({ vertical }: { vertical: string }) {
+  const map: Record<string, string> = {
+    Trabalhista: "bg-red-500/8 text-primary-dim border-primary/15",
+    LGPD: "bg-emerald-500/8 text-emerald-400 border-emerald-500/15",
+    Consumidor: "bg-amber-500/8 text-amber-400 border-amber-500/15",
+    Societario: "bg-blue-500/8 text-blue-400 border-blue-500/15",
+    Processual: "bg-purple-500/8 text-purple-400 border-purple-500/15",
   };
+  return (
+    <span className={`inline-flex items-center font-mono text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded border ${map[vertical] ?? "bg-white/5 text-muted border-white/10"}`}>
+      {vertical}
+    </span>
+  );
+}
+
+export default function SkillCard({ skill, onSelect, featured = false }: SkillCardProps) {
+  const downloadsLabel = skill.starsCount >= 1000
+    ? `${(skill.starsCount / 1000).toFixed(1)}k`
+    : String(skill.starsCount);
+
+  if (featured) {
+    return (
+      <div
+        id={`skill-card-${skill.id}`}
+        onClick={() => onSelect(skill)}
+        className="group cursor-pointer col-span-2 bg-card border border-border hover:border-[#3a3a40] transition-colors duration-200 p-6 flex flex-col gap-5"
+      >
+        {/* Featured header */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="font-mono text-[9px] uppercase tracking-widest text-muted border border-border px-1.5 py-0.5">
+                Em destaque
+              </span>
+              <VerticalPill vertical={skill.vertical} />
+              {skill.complianceChecked && (
+                <span className="inline-flex items-center gap-1 font-mono text-[9px] uppercase tracking-wider px-1.5 py-0.5 border border-emerald-500/15 bg-emerald-500/8 text-emerald-400">
+                  <ShieldCheck className="w-2.5 h-2.5" /> OAB
+                </span>
+              )}
+            </div>
+            <h3 className="text-base font-semibold text-slate-100 leading-snug mb-2 group-hover:text-foreground transition-colors">
+              {skill.name}
+            </h3>
+            <p className="text-sm text-muted leading-relaxed line-clamp-2 font-light">
+              {skill.description}
+            </p>
+          </div>
+          <div className="shrink-0 w-8 h-8 rounded-sm bg-card-hover border border-border flex items-center justify-center opacity-0 group-hover:opacity-100 translate-x-1 group-hover:translate-x-0 transition-all duration-200">
+            <ArrowUpRight className="w-4 h-4 text-foreground" />
+          </div>
+        </div>
+
+        {/* Score bars */}
+        <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
+          <div>
+            <div className="flex justify-between mb-1">
+              <span className="font-mono text-[9px] uppercase tracking-wider text-xmuted">Qualidade</span>
+            </div>
+            <QualityBar score={skill.qualityScore} />
+          </div>
+          <div>
+            <div className="flex justify-between mb-1">
+              <span className="font-mono text-[9px] uppercase tracking-wider text-xmuted">Compliance</span>
+            </div>
+            <QualityBar score={skill.regulatoryScore} />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-3 border-t border-border">
+          <div className="flex items-center gap-3 text-muted font-mono text-[10px]">
+            <span className="text-xmuted font-mono text-[10px]">{skill.ownerAvatar} {skill.ownerName}</span>
+            <span className="flex items-center gap-1">
+              <Star className="w-3 h-3 fill-amber-400 stroke-amber-400" />
+              {skill.rating.toFixed(1)}
+              <span className="text-xmuted">({skill.reviewCount})</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <Download className="w-3 h-3" />
+              {downloadsLabel}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {skill.tags.slice(0, 3).map((tag) => (
+              <span key={tag} className="font-mono text-[9px] text-xmuted bg-card-hover border border-[#242428] px-1.5 py-0.5">
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
       id={`skill-card-${skill.id}`}
       onClick={() => onSelect(skill)}
-      className="group cursor-pointer p-1.5 rounded-[2rem] bg-[#0c0c0e]/80 border border-white/5 hover:border-orange-500/30 transition-all duration-500 ease-spring hover:scale-[1.015] active:scale-[0.985] flex flex-col justify-between h-[210px] w-full shadow-2xl"
+      className="group cursor-pointer bg-card border border-border hover:border-[#3a3a40] transition-colors duration-200 p-4 flex flex-col gap-3"
     >
-      {/* Inner Container: Glass incrusted into metal look */}
-      <div className="bg-[#050507] border border-white/5 p-4.5 rounded-[1.7rem] h-full flex flex-col justify-between transition-all duration-500 group-hover:bg-[#08080c]">
-        
-        <div>
-          {/* Card Header */}
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <div className="flex items-center gap-2 overflow-hidden">
-              <div className="w-6 h-6 shrink-0 flex items-center justify-center rounded-lg bg-orange-500/10 text-xs border border-orange-500/20">
-                {skill.ownerAvatar}
-              </div>
-              <div className="text-[10px] text-slate-500 font-mono truncate">
-                {skill.ownerName}
-                <span className="text-slate-600 mx-1">/</span>
-                <span className="text-slate-100 font-sans font-bold group-hover:text-orange-400 transition-all duration-300">
-                  {skill.name}
-                </span>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2 shrink-0">
-              {skill.rating > 0 && (
-                <div className="flex items-center gap-0.5 text-[#facc15] font-mono text-[10px] font-semibold">
-                  <Star className="w-3 h-3 fill-[#facc15] stroke-[#facc15]" />
-                  <span>{skill.rating.toFixed(1)}</span>
-                </div>
-              )}
-              
-              <div className="flex items-center gap-1 px-1.5 py-0.5 bg-white/5 border border-white/10 text-slate-400 rounded-md font-mono text-[9px] leading-tight">
-                <GitFork className="w-2.5 h-2.5" />
-                <span>{(skill.starsCount / 1000).toFixed(1)}k</span>
-              </div>
-            </div>
+      {/* Header */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <span className="font-mono text-[9px] text-xmuted">{skill.ownerAvatar} {skill.ownerName}</span>
           </div>
-
-          {/* Card Body Description */}
-          <p className="text-slate-400 text-xs leading-relaxed line-clamp-2 overflow-hidden mt-2 mb-3 font-sans font-light group-hover:text-slate-300 transition-colors duration-300">
-            {skill.description}
-          </p>
+          <h4 className="text-sm font-semibold text-slate-200 leading-snug line-clamp-2 group-hover:text-foreground transition-colors">
+            {skill.name}
+          </h4>
         </div>
-
-        {/* Card Footer tags and scores */}
-        <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/5">
-          <div className="flex items-center gap-1.5 overflow-hidden">
-            {skill.tags.slice(0, 2).map((tag, idx) => (
-              <span
-                key={idx}
-                className="text-[9px] shrink-0 font-mono bg-white/5 text-slate-400 border border-white/5 px-2 py-0.5 rounded-full"
-              >
-                {tag.toLowerCase()}
-              </span>
-            ))}
-            {skill.complianceChecked && (
-              <span className="hidden md:flex items-center gap-0.5 text-[8px] text-emerald-400 font-mono border border-emerald-500/10 bg-emerald-500/5 px-1.5 py-0.5 rounded-full shrink-0 uppercase tracking-widest font-black">
-                OAB Ok
-              </span>
-            )}
-          </div>
-
-          {/* Dual scores colored based on score value */}
-          <div className="flex items-center gap-1.5 font-mono text-[9px] sm:text-[10px] font-semibold shrink-0">
-            <div className={`border px-2 py-0.5 rounded-full flex items-center gap-1 ${getQualityStyle(skill.qualityScore)}`}>
-              <Wrench className="w-2.5 h-2.5" />
-              <span>Q: {skill.qualityScore}</span>
-            </div>
-
-            <div className={`border px-2 py-0.5 rounded-full flex items-center gap-1 ${getRegulatoryStyle(skill.regulatoryScore)}`}>
-              <ShieldCheck className="w-2.5 h-2.5" />
-              <span>C: {skill.regulatoryScore}</span>
-            </div>
-            
-            {/* Haptic hover indicator arrow */}
-            <div className="w-5 h-5 rounded-full bg-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-1 group-hover:translate-x-0 border border-white/10 shrink-0">
-              <ArrowUpRight className="w-3 h-3 text-orange-400" />
-            </div>
-          </div>
+        <div className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <ArrowUpRight className="w-3.5 h-3.5 text-muted" />
         </div>
+      </div>
+
+      {/* Description */}
+      <p className="text-xs text-muted leading-relaxed line-clamp-2 font-light">
+        {skill.description}
+      </p>
+
+      {/* Scores */}
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[9px] text-xmuted w-14 shrink-0">Qualidade</span>
+          <QualityBar score={skill.qualityScore} />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[9px] text-xmuted w-14 shrink-0">Compliance</span>
+          <QualityBar score={skill.regulatoryScore} />
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="flex items-center justify-between pt-2.5 border-t border-border">
+        <div className="flex items-center gap-2.5 text-xmuted font-mono text-[10px]">
+          <span className="flex items-center gap-1">
+            <Star className="w-2.5 h-2.5 fill-amber-400 stroke-amber-400" />
+            {skill.rating.toFixed(1)}
+          </span>
+          <span className="flex items-center gap-1">
+            <Download className="w-2.5 h-2.5" />
+            {downloadsLabel}
+          </span>
+          {skill.complianceChecked && (
+            <span className="flex items-center gap-0.5 text-emerald-500">
+              <ShieldCheck className="w-2.5 h-2.5" /> OAB
+            </span>
+          )}
+        </div>
+        <VerticalPill vertical={skill.vertical} />
       </div>
     </div>
   );
 }
-

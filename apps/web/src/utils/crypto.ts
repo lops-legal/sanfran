@@ -2,7 +2,7 @@ import crypto from 'crypto';
 
 const algorithm = 'aes-256-gcm';
 // Expect a 32‑byte base64 key in env ENCRYPTION_KEY (generate with: openssl rand -base64 32)
-const keyBase64 = process.env.ENCRYPTION_KEY || '';
+const keyBase64 = import.meta.env.VITE_ENCRYPTION_KEY || '';
 if (!keyBase64) {
   console.warn('ENCRYPTION_KEY not set – encryption functions will throw if used.');
 }

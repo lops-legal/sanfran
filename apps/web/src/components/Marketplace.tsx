@@ -1,572 +1,655 @@
-import React, { useState, useRef, useEffect } from "react";
-import { LegalSkill, VerticalCategory, TaskCategory, FaqItem } from "../types";
+import React, { useState, useRef, useEffect, useMemo, useTransition, useCallback } from "react";
+import { LegalSkill } from "../types";
 import { VERTICALS, TASK_CATEGORIES, FAQS } from "../data";
 import SkillCard from "./SkillCard";
-import { 
-  Search, GitFork, Sliders, Grid, List, HelpCircle, 
-  ExternalLink, ChevronDown, Check, RefreshCw, X, Shield, Scale, Map
+import {
+  Search, Sliders, Grid, List, HelpCircle, ChevronDown, RefreshCw, X,
+  Scale, AlertTriangle, Inbox, Loader2, SlidersHorizontal, ArrowUpRight, Plus,
 } from "lucide-react";
-
-interface MarketplaceProps {
-  skillsList: LegalSkill[];
-  onSelectSkill: (skill: LegalSkill) => void;
-  onNavigateToLex: () => void;
+import {
+  useInfiniteSkills, useInfiniteScrollSentinel,
+  SortOption,
+} from "./useInfiniteSkills";
+import { createSupabaseAdapter } from "../lib/supabaseAdapter";
+import { useCatalogStats } from "../hooks/useCatalogStats";
+import CreateSkillModal from "./CreateSkillModal";
+import { toast } from "./Toast";
+import { useAuth } from "../contexts/AuthContext";
+// ---------------------------------------------------------------------------
+// URL Sync helpers
+// ---------------------------------------------------------------------------
+function readSearchParams() {
+  const p = new URLSearchParams(window.location.search);
+  return {
+    q: p.get("q") ?? "",
+    vertical: p.get("v") ?? null,
+    category: p.get("cat") ?? null,
+    score: parseInt(p.get("score") ?? "0", 10),
+    sort: (p.get("sort") ?? "stars") as SortOption,
+  };
 }
 
-export default function Marketplace({ skillsList, onSelectSkill, onNavigateToLex }: MarketplaceProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedVertical, setSelectedVertical] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [minQualityScore, setMinQualityScore] = useState<number>(0);
+function pushSearchParams(params: {
+  q: string;
+  vertical: string | null;
+  category: string | null;
+  score: number;
+  sort: SortOption;
+}) {
+  const p = new URLSearchParams();
+  if (params.q) p.set("q", params.q);
+  if (params.vertical) p.set("v", params.vertical);
+  if (params.category) p.set("cat", params.category);
+  if (params.score > 0) p.set("score", String(params.score));
+  if (params.sort !== "stars") p.set("sort", params.sort);
+  const search = p.toString();
+  window.history.replaceState(null, "", search ? `?${search}` : window.location.pathname);
+}
+
+// ---------------------------------------------------------------------------
+// Props & constants
+// ---------------------------------------------------------------------------
+interface MarketplaceProps {
+  onSelectSkill: (skill: LegalSkill) => void;
+}
+
+const PAGE_SIZE = 12;
+
+const SORT_TABS: { id: SortOption; label: string }[] = [
+  { id: "stars", label: "Popular" },
+  { id: "score", label: "Qualidade" },
+  { id: "hot", label: "Em alta" },
+  { id: "recent", label: "Recente" },
+];
+
+// Vertical accent colors (minimal, no glow)
+const VERTICAL_ACCENT: Record<string, { dot: string; border: string; text: string }> = {
+  Trabalhista: { dot: "bg-red-500", border: "border-primary", text: "text-primary-dim" },
+  LGPD: { dot: "bg-emerald-500", border: "border-emerald-500", text: "text-emerald-400" },
+  Consumidor: { dot: "bg-amber-500", border: "border-amber-500", text: "text-amber-400" },
+  Societario: { dot: "bg-blue-500", border: "border-blue-500", text: "text-blue-400" },
+  Processual: { dot: "bg-purple-500", border: "border-purple-500", text: "text-purple-400" },
+};
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+export default function Marketplace({ onSelectSkill }: MarketplaceProps) {
+  const initial = readSearchParams();
+  const { stats: catalogStats, isLoading: statsLoading } = useCatalogStats();
+  const { user } = useAuth();
+
+  const [searchInput, setSearchInput] = useState(initial.q);
+  const [selectedVertical, setSelectedVertical] = useState<string | null>(initial.vertical);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(initial.category);
+  const [minQualityScore, setMinQualityScore] = useState<number>(initial.score);
+  const [sortBy, setSortBy] = useState<SortOption>(initial.sort);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [sortBy, setSortBy] = useState<"stars" | "recent" | "score" | "hot">("stars");
-  const [visibleCount, setVisibleCount] = useState<number>(3);
-  const [loadingMore, setLoadingMore] = useState(false);
-  
-  // Reset visible count when any filter changes
-  useEffect(() => {
-    setVisibleCount(3);
-  }, [searchQuery, selectedVertical, selectedCategory, minQualityScore, sortBy]);
-
-  // Accordion active FAQ tracking
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
-  
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [filterOpen, setFilterOpen] = useState(false); // mobile
+  const [isScrolled, setIsScrolled] = useState(false); // for sticky filter bar
 
-  // Focus search input when '/' keyboard shortcut is triggered
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [, startTransition] = useTransition();
+
+  // Sync URL on filter change
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "/" && document.activeElement !== searchInputRef.current) {
+    pushSearchParams({ q: searchInput, vertical: selectedVertical, category: selectedCategory, score: minQualityScore, sort: sortBy });
+  }, [searchInput, selectedVertical, selectedCategory, minQualityScore, sortBy]);
+
+  // Sticky header trigger
+  useEffect(() => {
+    const onScroll = () => setIsScrolled(window.scrollY > 200);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // '/' shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const active = document.activeElement;
+      if (e.key === "/" && !(active instanceof HTMLInputElement) && !(active instanceof HTMLTextAreaElement)) {
         e.preventDefault();
         searchInputRef.current?.focus();
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  // Filter & sort logic
-  const filteredSkills = skillsList.filter((skill) => {
-    const matchesSearch = 
-      skill.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      skill.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      skill.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
-      
-    const matchesVertical = selectedVertical ? skill.vertical === selectedVertical : true;
-    
-    // In our simplified logic, we map categories to search or tag matching
-    const matchesCategory = selectedCategory 
-      ? skill.tags.some(t => t.toLowerCase() === selectedCategory.toLowerCase()) || 
-        skill.description.toLowerCase().includes(selectedCategory.toLowerCase())
-      : true;
+  const adapter = useMemo(() => createSupabaseAdapter(), []);
 
-    const matchesScore = skill.qualityScore >= minQualityScore;
-
-    return matchesSearch && matchesVertical && matchesCategory && matchesScore;
+  const { items, totalCount, isLoading, isLoadingMore, error, hasMore, loadMore, retry, mutateItems } = useInfiniteSkills({
+    adapter,
+    search: searchInput,
+    vertical: selectedVertical,
+    taskCategory: selectedCategory,
+    minQualityScore,
+    sortBy,
+    pageSize: PAGE_SIZE,
   });
 
-  const sortedSkills = [...filteredSkills].sort((a, b) => {
-    if (sortBy === "stars") return b.starsCount - a.starsCount;
-    if (sortBy === "recent") return b.updatedAt.localeCompare(a.updatedAt);
-    if (sortBy === "hot") return (b as any).hotScore ? (b as any).hotScore - (a as any).hotScore : b.qualityScore - a.qualityScore;
-    return b.qualityScore - a.qualityScore;
-  });
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const handleLoadMore = () => {
-    setLoadingMore(true);
-    setTimeout(() => {
-      setVisibleCount(prev => prev + 3);
-      setLoadingMore(false);
-    }, 800);
-  };
+  const handleOptimisticCreate = useCallback((newSkill: LegalSkill) => {
+    // Instantly prepend the new skill into the visible list
+    mutateItems((prev) => [newSkill, ...prev]);
+    toast.success("Skill publicada!", `"${newSkill.name}" aparece no topo do catálogo.`);
+  }, [mutateItems]);
 
-  const handleClearFilters = () => {
-    setSearchQuery("");
-    setSelectedVertical(null);
-    setSelectedCategory(null);
-    setMinQualityScore(0);
-  };
+  const sentinelRef = useInfiniteScrollSentinel(loadMore, hasMore && !isLoading && !error);
 
-  const toggleFaq = (idx: number) => {
-    setActiveFaq(activeFaq === idx ? null : idx);
-  };
+  const activeFilterCount =
+    (selectedVertical ? 1 : 0) + (selectedCategory ? 1 : 0) + (minQualityScore > 0 ? 1 : 0) + (searchInput ? 1 : 0);
+
+  const handleClearFilters = useCallback(() => {
+    startTransition(() => {
+      setSearchInput("");
+      setSelectedVertical(null);
+      setSelectedCategory(null);
+      setMinQualityScore(0);
+    });
+  }, [startTransition]);
+
+  const verticalCounts = catalogStats.verticalCounts;
+  const totalCatalog = catalogStats.totalPublished;
+  const totalOabVerified = catalogStats.totalOabVerified; // total de skills revisadas contra OWASP Agentic Skills Top 10
+
+  const toggleFaq = (idx: number) => setActiveFaq((prev) => (prev === idx ? null : idx));
+
+  // Bento: first result gets featured (spans 2 cols) when in grid mode with enough items
+  const featuredSkill = viewMode === "grid" && items.length >= 3 ? items[0] : null;
+  const remainingItems = featuredSkill ? items.slice(1) : items;
 
   return (
-    <div id="sanfran-marketplace-root" className="text-[#eaeaea] font-sans pb-16 animate-fade-in">
-      
-      {/* SECTION 2: Hero Section designed with Largo de São Francisco Architecture Details */}
-      <div className="relative border-b border-[#232328] bg-[#09090b] pt-12 pb-14 px-4 overflow-hidden">
-        {/* Absolute stylized red/black visual blocks inspired by uploaded references */}
-        <div className="absolute top-0 right-0 w-[450px] h-[450px] rounded-full bg-red-600/5 filter blur-[100px] pointer-events-none" />
+    <div id="sanfran-marketplace-root" className="text-foreground font-sans pb-24">
 
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            
-            {/* Left Column: Textual Intro and Interactive Search (Full width) */}
-            <div className="lg:col-span-12 space-y-6">
-              {/* Proposta de valor / Pre-heading */}
-              <div className="flex items-center gap-2">
-                <span className="h-[2px] w-6 bg-red-650 inline-block" />
-                <span className="font-mono text-[10px] sm:text-xs text-red-500 font-extrabold uppercase tracking-widest text-shadow-glow">
-                  ARCADA ACADÊMICA: AGENTSKILLS.IO COMPLIANT
-                </span>
-              </div>
-
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-none uppercase max-w-4xl text-shadow-title font-sans">
-                Skills Jurídicas de <span className="text-red-500 font-black">Alta Precisão</span> para Agentes de IA
-              </h2>
-              
-              <p className="max-w-2xl text-slate-400 text-xs sm:text-sm md:text-md leading-relaxed font-sans font-light">
-                Crie, audite e conecte diretivas estruturadas em <code className="text-orange-400 font-mono text-xs">SKILL.md</code> em conformidade com o CDC, CLT e LGPD do Direito Brasileiro. Menos alucinação, mais segurança processual nas Arcadas.
-              </p>
-
-              {/* Interactive Core Search Bar */}
-              <div className="mt-6 max-w-xl relative flex items-center bg-[#09090b]/80 border border-white/10 rounded-full focus-within:border-red-500/80 focus-within:shadow-[0_0_20px_rgba(239,68,68,0.15)] transition-all duration-500 ease-spring px-4 py-2">
-                <Search className="w-4.5 h-4.5 text-slate-500 mr-3 shrink-0" />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  id="marketplace-search-input"
-                  className="w-full bg-transparent focus:outline-none text-xs sm:text-sm text-slate-200 font-sans tracking-wide"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Pesquisar por áreas jurídicas (ex: multa rescisória, CLT, LGPD, CDC)..."
-                />
-                <div className="hidden sm:flex items-center ml-2 shrink-0">
-                  <span className="font-mono text-[9px] text-slate-500 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full leading-none uppercase">
-                    Atalho /
-                  </span>
-                </div>
-              </div>
-
-              {/* Statistics catalog indicators */}
-              <div className="flex flex-wrap gap-4 sm:gap-6 font-mono text-[11px] text-slate-500">
-                <span>Ativos públicos: <span className="text-white font-semibold">{skillsList.length}</span></span>
-                <span>•</span>
-                <span>Auditados OAB: <span className="text-emerald-400 font-semibold">{skillsList.filter(s => s.complianceChecked).length}</span></span>
-                <span>•</span>
-                <span>Download global: <span className="text-white font-semibold">124k+</span></span>
-              </div>
-
-              {/* Integration compatibility row */}
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-4 border-t border-[#1a1a20]/60 text-slate-500 font-mono text-[10px] uppercase">
-                <span>Interoperável com:</span>
-                <div className="flex gap-3 text-slate-300">
-                  <span className="hover:text-white transition">ChatGPT</span>
-                  <span className="text-slate-600">•</span>
-                  <span className="hover:text-white transition">Claude Projects</span>
-                  <span className="text-slate-500">•</span>
-                  <span className="hover:text-white transition">Cursor rules</span>
-                </div>
-              </div>
-            </div>
-
+      {/* ============================================================ */}
+      {/* STICKY COMPACT FILTER BAR — appears when user scrolls past hero */}
+      {/* ============================================================ */}
+      <div
+        className={`fixed top-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border transition-all duration-300 ${
+          isScrolled ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 h-12 flex items-center gap-4">
+          <div className="flex items-center gap-2 text-xs font-mono text-muted shrink-0">
+            <Scale className="w-3.5 h-3.5 text-primary" />
+            <span className="text-foreground font-semibold">Sanfran.md</span>
           </div>
-        </div>
-      </div>
-
-      {/* CTA para criar sua própria Skill */}
-      <section className="mt-8 p-6 bg-[#101012] border border-slate-800 rounded-lg text-center">
-        <h2 className="text-xl font-bold text-orange-500 mb-2">Crie e publique suas próprias habilidades com nosso Agente Lex gratuitamente</h2>
-        <p className="text-sm text-slate-300 mb-4">Personalize o agente de IA para o seu trabalho jurídico usando o Lex.</p>
-        <button onClick={onNavigateToLex} className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-500 transition">Ir para o Atelier Lex AI</button>
-      </section>
-      {/* SECTION 3: Navegação por área do Direito (VerticalGrid) */}
-      <div className="max-w-7xl mx-auto py-12 px-4">
-        <div className="flex items-center justify-between border-b border-[#232328] pb-3 mb-6">
-          <h3 className="text-xs font-mono font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
-            <Scale className="w-4 h-4 text-red-500" />
-            Navegar por verticais jurídicas
-          </h3>
-          {selectedVertical && (
-            <button
-              onClick={() => setSelectedVertical(null)}
-              className="font-mono text-[10px] text-red-500 hover:text-red-400 underline flex items-center gap-1 uppercase"
-            >
-              Exibir todas
+          <div className="flex-1 flex items-center gap-2 border border-border bg-card px-3 py-1.5 max-w-md">
+            <Search className="w-3.5 h-3.5 text-muted shrink-0" />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => startTransition(() => setSearchInput(e.target.value))}
+              placeholder="Buscar skills..."
+              className="w-full bg-transparent text-xs text-slate-200 placeholder:text-xmuted focus:outline-none"
+            />
+          </div>
+          <div className="hidden md:flex items-center gap-1">
+            {SORT_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setSortBy(tab.id)}
+                className={`px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide transition-colors ${
+                  sortBy === tab.id ? "text-foreground bg-[#232328]" : "text-muted hover:text-foreground"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          {activeFilterCount > 0 && (
+            <button onClick={handleClearFilters} className="shrink-0 text-[10px] font-mono text-primary-dim hover:text-red-300 uppercase tracking-wide">
+              Limpar ({activeFilterCount})
             </button>
           )}
         </div>
+      </div>
 
-        {/* 5-Columns/Grid for legal vertical selection */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {VERTICALS.map((vertical) => {
-            const isActive = selectedVertical === vertical.id;
+      {/* ============================================================ */}
+      {/* HERO — editorial, editorial, editorial                        */}
+      {/* ============================================================ */}
+      <div className="border-b border-border bg-background px-4 pt-14 pb-12">
+        <div className="max-w-7xl mx-auto">
+
+          
+
+          {/* Two-column hero layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-10 items-end">
+            <div>
+              <h1 className="text-4xl sm:text-5xl font-bold text-foreground tracking-tight leading-[1.08] mb-5">
+                Skills jurídicas<br />
+                <span className="text-muted font-normal">para agentes de IA</span>
+              </h1>
+              <p className="text-sm text-muted leading-relaxed max-w-xl mb-8 font-light">
+                Para todo problema do seu dia a dia jurídico, existe uma skill que pode tornar o seu agente de IA um especialista jurídico brasileiro. Mais contexto, menos alucinação.
+              </p>
+
+              {/* Search */}
+              <div className="flex items-center gap-2 border border-border bg-card px-4 py-3 max-w-xl focus-within:border-[#3a3a3e] transition-colors">
+                {isLoading && searchInput ? (
+                  <Loader2 className="w-4 h-4 text-muted shrink-0 animate-spin" />
+                ) : (
+                  <Search className="w-4 h-4 text-muted shrink-0" />
+                )}
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchInput}
+                  onChange={(e) => startTransition(() => setSearchInput(e.target.value))}
+                  placeholder="ex: multa rescisória, CLT, LGPD, CDC..."
+                  className="flex-1 bg-transparent text-sm text-slate-200 placeholder:text-xmuted focus:outline-none"
+                />
+                {searchInput ? (
+                  <button onClick={() => setSearchInput("")} className="text-xmuted hover:text-muted transition-colors">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                ) : (
+                  <kbd className="hidden sm:inline font-mono text-[9px] text-xmuted border border-border px-1.5 py-0.5 rounded">
+                    /
+                  </kbd>
+                )}
+              </div>
+            </div>
+
+            {/* Stats panel — right column */}
+            <div className="border border-border bg-card divide-y divide-[#1e1e22]">
+              {[
+                { label: "Skills no catálogo", value: statsLoading ? "—" : totalCatalog, color: "text-foreground" },
+                { label: "OWASP Agentic Top 10", value: statsLoading ? "—" : totalOabVerified, color: "text-emerald-400" },
+                { label: "Resultado filtrado", value: isLoading ? "—" : totalCount, color: "text-foreground" },
+              ].map(({ label, value, color }) => (
+                <div key={label} className="px-5 py-3 flex items-center justify-between">
+                  <span className="text-xs text-muted font-mono">{label}</span>
+                  <span className={`font-mono text-sm font-bold tabular-nums ${color}`}>{value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ============================================================ */}
+      {/* VERTICALS ROW                                                 */}
+      {/* ============================================================ */}
+      <div className="border-b border-border bg-background">
+        <div className="max-w-7xl mx-auto px-4 py-0 flex items-center gap-0 overflow-x-auto scrollbar-none">
+          <button
+            onClick={() => setSelectedVertical(null)}
+            className={`shrink-0 flex items-center gap-2 px-4 py-4 font-mono text-xs uppercase tracking-wide transition-colors border-b-2 -mb-px ${
+              !selectedVertical
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted hover:text-foreground"
+            }`}
+          >
+            Todas
+            <span className="text-xmuted">{statsLoading ? "…" : totalCatalog}</span>
+          </button>
+          {VERTICALS.map((v) => {
+            const accent = VERTICAL_ACCENT[v.id];
+            const isActive = selectedVertical === v.id;
+            const count = verticalCounts[v.id] ?? 0;
             return (
-              <div
-                key={vertical.id}
-                id={`vertical-card-${vertical.id}`}
-                onClick={() => setSelectedVertical(isActive ? null : vertical.id)}
-                className={`cursor-pointer ring-offset-black transition-all duration-300 p-5 border flex flex-col justify-between h-[150px] relative hover:scale-[1.01] ${vertical.accentClass} ${
-                  isActive 
-                    ? "bg-red-950/15 border-red-500 scale-[1.01]" 
-                    : "bg-[#101012] border-slate-800"
+              <button
+                key={v.id}
+                onClick={() => setSelectedVertical(isActive ? null : v.id)}
+                className={`shrink-0 flex items-center gap-2 px-4 py-4 font-mono text-xs uppercase tracking-wide transition-colors border-b-2 -mb-px ${
+                  isActive
+                    ? `${accent?.border ?? "border-primary"} ${accent?.text ?? "text-primary-dim"}`
+                    : "border-transparent text-muted hover:text-foreground"
                 }`}
               >
-                <div>
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="font-mono text-[10px] text-slate-500 uppercase tracking-wide">
-                      {vertical.count} Skills
-                    </span>
-                    <span className="text-sm">🏛️</span>
-                  </div>
-                  <h4 className="font-bold text-sm tracking-tight text-white group-hover:text-red-400">
-                    {vertical.name}
-                  </h4>
-                </div>
-                <p className="text-[11px] leading-relaxed text-slate-500 font-sans mt-2 line-clamp-3">
-                  {vertical.description}
-                </p>
-              </div>
+                {isActive && accent && <span className={`w-1.5 h-1.5 rounded-full ${accent.dot} shrink-0`} />}
+                {v.name}
+                <span className="text-xmuted">{count}</span>
+              </button>
             );
           })}
         </div>
       </div>
 
-      {/* COMPONENTE: Habilidades por Plataforma (Inspired by agentskill.sh) */}
-      <div className="max-w-7xl mx-auto px-4 py-8 border-t border-white/5">
-        <div className="flex items-center gap-2 mb-6">
-          <span className="text-orange-500">💻</span>
-          <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-slate-300">
-            Habilidades por plataforma
-          </h3>
-        </div>
+      {/* ============================================================ */}
+      {/* CATALOG: SIDEBAR + RESULTS                                    */}
+      {/* ============================================================ */}
+      <div className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8 items-start">
 
-        {/* Grid Principal das 3 Maiores (Claude Code, TessAI, Manus) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          
-          {/* Claude Code (Maior) */}
-          <div className="bg-[#0c0c0e] border border-white/5 p-5 rounded-2xl flex items-center gap-4 hover:border-orange-500/30 transition-all group">
-            <div className="w-14 h-14 rounded-xl bg-orange-500/10 flex items-center justify-center text-2xl shrink-0 group-hover:scale-105 transition-transform">
-              🤖
-            </div>
-            <div>
-              <h4 className="font-sans font-bold text-sm text-white">Código Claude</h4>
-              <p className="font-mono text-[10px] text-slate-500">Antrópico · Recomendado</p>
-            </div>
-          </div>
+        {/* ---------- SIDEBAR ---------- */}
+        <div className="lg:sticky lg:top-14 space-y-px">
 
-          {/* TessAI (Maior) */}
-          <div className="bg-[#0c0c0e] border border-white/5 p-5 rounded-2xl flex items-center gap-4 hover:border-orange-500/30 transition-all group">
-            <img 
-              src="/logo_tessai.jpg" 
-              alt="TessAI Logo" 
-              className="w-14 h-14 rounded-xl object-cover shrink-0 group-hover:scale-105 transition-transform"
-            />
-            <div>
-              <h4 className="font-sans font-bold text-sm text-white">TessAI</h4>
-              <p className="font-mono text-[10px] text-slate-500">Inteligência Artificial Ativa</p>
-            </div>
-          </div>
-
-          {/* Manus (Maior) */}
-          <div className="bg-[#0c0c0e] border border-white/5 p-5 rounded-2xl flex items-center gap-4 hover:border-orange-500/30 transition-all group">
-            <img 
-              src="/logo_manus.png" 
-              alt="Manus Logo" 
-              className="w-14 h-14 rounded-xl object-cover shrink-0 group-hover:scale-105 transition-transform"
-            />
-            <div>
-              <h4 className="font-sans font-bold text-sm text-white">Manus</h4>
-              <p className="font-mono text-[10px] text-slate-500">Agentes Autónomos</p>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Fileiras de Outras Plataformas (Menores) */}
-        <div className="flex flex-wrap items-center gap-3">
-          
-          {/* OpenAI / ChatGPT */}
-          <div className="bg-[#0c0c0e] border border-white/5 px-4 py-2.5 rounded-xl flex items-center gap-2.5 hover:border-white/10 transition-all">
-            <span className="text-sm">🧠</span>
-            <span className="font-sans text-[11px] text-slate-300">ChatGPT</span>
-          </div>
-
-          {/* OpenClaw */}
-          <div className="bg-[#0c0c0e] border border-white/5 px-4 py-2.5 rounded-xl flex items-center gap-2.5 hover:border-white/10 transition-all">
-            <span className="text-sm">🦀</span>
-            <span className="font-sans text-[11px] text-slate-300">OpenClaw</span>
-          </div>
-
-          {/* Outra Logo Encomendada */}
-          <div className="bg-[#0c0c0e] border border-white/5 px-4 py-2.5 rounded-xl flex items-center gap-2.5 hover:border-white/10 transition-all">
-            <img 
-              src="/logo_other.png" 
-              alt="Plataforma Integrada" 
-              className="w-4 h-4 rounded object-cover"
-            />
-            <span className="font-sans text-[11px] text-slate-300">AutoDev</span>
-          </div>
-
-          {/* Gemini */}
-          <div className="bg-[#0c0c0e] border border-white/5 px-4 py-2.5 rounded-xl flex items-center gap-2.5 hover:border-white/10 transition-all">
-            <span className="text-sm">✨</span>
-            <span className="font-sans text-[11px] text-slate-300">Gemini</span>
-          </div>
-
-          {/* Llama */}
-          <div className="bg-[#0c0c0e] border border-white/5 px-4 py-2.5 rounded-xl flex items-center gap-2.5 hover:border-white/10 transition-all">
-            <span className="text-sm">🦙</span>
-            <span className="font-sans text-[11px] text-slate-300">LlamaIndex</span>
-          </div>
-
-        </div>
-      </div>
-
-      {/* SECTION 6: Feed de skills com scroll infinito e Filtros Sticky */}
-      <div className="max-w-7xl mx-auto py-8 px-4 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
-        {/* LEFT COMPACT FILTER CONTROLS (3 columns) */}
-        <div className="lg:col-span-3 space-y-4 lg:sticky top-4">
-          <div className="border border-[#232328] bg-[#0d0d0f] p-4 space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-900 pb-2.5">
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-100 flex items-center gap-1.5">
-                <Sliders className="w-4 h-4 text-red-500" />
-                Refinar Pesquisa
+          {/* Mobile toggle */}
+          <button
+            onClick={() => setFilterOpen((v) => !v)}
+            className="lg:hidden w-full flex items-center justify-between border border-border bg-card px-4 py-3 text-xs font-mono uppercase text-foreground mb-2"
+          >
+            <span className="flex items-center gap-2">
+              <SlidersHorizontal className="w-3.5 h-3.5" /> Filtros
+            </span>
+            {activeFilterCount > 0 && (
+              <span className="bg-primary text-foreground rounded-full w-4 h-4 flex items-center justify-center text-[9px] font-bold">
+                {activeFilterCount}
               </span>
-              <button
-                onClick={handleClearFilters}
-                className="text-[10px] uppercase font-mono text-red-500 hover:text-red-400 font-semibold"
-              >
-                Limpar
-              </button>
+            )}
+          </button>
+
+          <div className={`${filterOpen ? "block" : "hidden lg:block"} space-y-px`}>
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-3 py-2.5 border border-border bg-card">
+              <span className="font-mono text-[10px] uppercase tracking-widest text-muted flex items-center gap-1.5">
+                <Sliders className="w-3 h-3" /> Filtros
+              </span>
+              {activeFilterCount > 0 && (
+                <button onClick={handleClearFilters} className="font-mono text-[10px] text-primary hover:text-primary-dim uppercase">
+                  Limpar
+                </button>
+              )}
             </div>
 
-            {/* Quality Score limit slider */}
-            <div>
-              <label className="text-[10px] font-mono text-slate-400 block uppercase tracking-wider mb-2">
-                Quality Score Mínimo: {minQualityScore} pts
-              </label>
+            {/* Task category */}
+            <div className="border border-border bg-card py-1">
+              <div className="px-3 py-2 font-mono text-[9px] uppercase tracking-widest text-xmuted border-b border-border">
+                Tipo de tarefa
+              </div>
+              {TASK_CATEGORIES.map((cat) => {
+                const isActive = selectedCategory === cat.id;
+                const categoryCount = catalogStats.taskCategoryCounts[cat.id] ?? 0;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setSelectedCategory(isActive ? null : cat.id)}
+                    className={`w-full flex items-center justify-between px-3 py-2 font-mono text-xs transition-colors ${
+                      isActive
+                        ? "text-foreground bg-card-hover border-l-2 border-primary"
+                        : "text-muted hover:text-foreground hover:bg-card border-l-2 border-transparent"
+                    }`}
+                  >
+                    <span className="truncate">{cat.name}</span>
+                    <span className="text-[10px] text-xmuted tabular-nums">
+                      {statsLoading ? "…" : categoryCount}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Quality score */}
+            <div className="border border-border bg-card p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-[9px] uppercase tracking-widest text-xmuted">Quality score mín.</span>
+                <span className="font-mono text-[10px] text-muted tabular-nums">{minQualityScore}</span>
+              </div>
               <input
                 type="range"
-                className="w-full filter accent-red-650 h-1 bg-slate-900 rounded-lg cursor-pointer"
-                min="0"
-                max="95"
-                step="5"
+                className="w-full accent-red-600 h-[2px] bg-[#2a2a2e] rounded cursor-pointer"
+                min="0" max="95" step="5"
                 value={minQualityScore}
-                onChange={(e) => setMinQualityScore(parseInt(e.target.value))}
+                onChange={(e) => setMinQualityScore(parseInt(e.target.value, 10))}
               />
-              <div className="flex justify-between font-mono text-[9px] text-slate-500 mt-1">
-                <span>0</span>
-                <span>50</span>
-                <span>95</span>
+              <div className="flex justify-between font-mono text-[9px] text-xmuted">
+                <span>0</span><span>50</span><span>95</span>
               </div>
             </div>
 
-            {/* Task category checkboxes list equivalent */}
-            <div>
-              <label className="text-[10px] font-mono text-slate-400 block uppercase tracking-wider mb-3">
-                Classificar por tarefa:
-              </label>
-              <div className="space-y-1.5">
-                {TASK_CATEGORIES.map((cat) => {
-                  const isActive = selectedCategory === cat.id;
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() => setSelectedCategory(isActive ? null : cat.id)}
-                      className={`w-full text-left px-2.5 py-1.5 font-mono text-xs border transition-all flex justify-between items-center cursor-pointer ${
-                        isActive
-                          ? "bg-red-500/10 border-red-500 text-white"
-                          : "bg-[#121215] border-transparent text-slate-400 hover:bg-slate-900"
-                      }`}
-                    >
-                      <span className="truncate">• {cat.name}</span>
-                      <span className="text-[10px] text-slate-600">{cat.count}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Quick action buttons block */}
-            <div className="pt-2 border-t border-slate-900">
-              <button
-                id="btn-goto-generator"
-                onClick={onNavigateToLex}
-                className="w-full cursor-pointer text-xs font-mono font-semibold uppercase bg-red-600 hover:bg-red-500 text-white py-2.5 text-center flex items-center justify-center gap-1.5"
-              >
-                🦊 Desejo criar com Lex
-              </button>
-              <p className="text-[10px] text-slate-500 mt-2 text-center leading-relaxed">
-                Tem uma minuta ou documento? Gere um <code className="text-orange-400">SKILL.md</code> customizado no chat.
-              </p>
-            </div>
-
+            {/* CTA */}
           </div>
         </div>
 
-        {/* RIGHT SKILLS CATALOG GRID (9 columns) */}
-        <div className="lg:col-span-9 space-y-4">
-          
-          {/* List parameters bar and view toggle */}
-          <div className="border border-[#232328] bg-[#0c0c0e] p-3 flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3 font-mono text-xs">
+        {/* ---------- RESULTS ---------- */}
+        <div className="space-y-4 min-w-0">
 
-              
-              {/* Reset/Clean active badges indicators query tag */}
-              {(selectedVertical || selectedCategory || searchQuery || minQualityScore > 0) && (
-                <div className="flex gap-2 items-center flex-wrap">
-                  <span className="w-1 h-3 bg-red-650" />
-                  <span className="text-[10px] text-red-400 uppercase font-bold">Filtros ativos</span>
-                </div>
+          {/* Active filter chips */}
+          {activeFilterCount > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              {searchInput && <FilterChip label={`"${searchInput}"`} onRemove={() => setSearchInput("")} />}
+              {selectedVertical && (
+                <FilterChip
+                  label={VERTICALS.find((v) => v.id === selectedVertical)?.name ?? selectedVertical}
+                  onRemove={() => setSelectedVertical(null)}
+                />
               )}
-              {/* Show count of results after filters */}
-              <span className="text-slate-400 text-xs ml-2">{filteredSkills.length} skill(s) encontradas</span>
+              {selectedCategory && (
+                <FilterChip
+                  label={TASK_CATEGORIES.find((c) => c.id === selectedCategory)?.name ?? selectedCategory}
+                  onRemove={() => setSelectedCategory(null)}
+                />
+              )}
+              {minQualityScore > 0 && <FilterChip label={`Score ≥ ${minQualityScore}`} onRemove={() => setMinQualityScore(0)} />}
             </div>
+          )}
 
-            {/* Selector sorter tabs (Principal, Tendências, Quente, Mais recente) */}
-            <div className="flex items-center gap-2 flex-wrap font-mono text-xs">
-              <button
-                onClick={() => setSortBy("stars")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
-                  sortBy === "stars"
-                    ? "bg-white/10 text-white font-bold"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                🏆 Principal
-              </button>
-              <button
-                onClick={() => setSortBy("score")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
-                  sortBy === "score"
-                    ? "bg-white/10 text-white font-bold"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                📈 Tendências
-              </button>
-              <button
-                onClick={() => setSortBy("hot")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
-                  sortBy === "hot"
-                    ? "bg-white/10 text-white font-bold"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                🔥 Quente
-              </button>
-              <button
-                onClick={() => setSortBy("recent")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
-                  sortBy === "recent"
-                    ? "bg-white/10 text-white font-bold"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                🕒 Mais recente
-              </button>
+          {/* Toolbar */}
+          <div className="flex items-center justify-between gap-4 flex-wrap border-b border-border pb-3">
+            <div className="flex items-center gap-1">
+              {SORT_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setSortBy(tab.id)}
+                  className={`px-3 py-1.5 font-mono text-[10px] uppercase tracking-wide transition-colors ${
+                    sortBy === tab.id
+                      ? "text-foreground bg-card-hover border border-border"
+                      : "text-muted hover:text-foreground"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
-
-            {/* Grid / List Toggler visually */}
             <div className="flex items-center gap-3">
-              <div className="hidden sm:flex border border-slate-800 rounded bg-[#121214] p-0.5">
+              <span className="text-xs font-mono text-xmuted tabular-nums">
+                {isLoading ? "…" : `${totalCount} skill${totalCount !== 1 ? "s" : ""}`}
+              </span>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary-dim text-foreground text-[10px] font-mono uppercase tracking-wide transition-colors"
+              >
+                <Plus className="w-3 h-3" />
+                Nova Skill
+              </button>
+              <div className="flex border border-border">
                 <button
                   onClick={() => setViewMode("grid")}
-                  className={`p-1 cursor-pointer transition ${viewMode === "grid" ? "bg-slate-800 text-white" : "text-slate-500"}`}
-                  title="Modo Grid"
+                  className={`p-1.5 transition-colors ${viewMode === "grid" ? "bg-card-hover text-foreground" : "text-xmuted hover:text-muted"}`}
+                  title="Grade"
                 >
-                  <Grid className="w-3.5 h-3.5" />
+                  <Grid className="w-3 h-3" />
                 </button>
                 <button
                   onClick={() => setViewMode("list")}
-                  className={`p-1 cursor-pointer transition ${viewMode === "list" ? "bg-slate-800 text-white" : "text-slate-500"}`}
-                  title="Modo Lista"
+                  className={`p-1.5 transition-colors ${viewMode === "list" ? "bg-card-hover text-foreground" : "text-xmuted hover:text-muted"}`}
+                  title="Lista"
                 >
-                  <List className="w-3.5 h-3.5" />
+                  <List className="w-3 h-3" />
                 </button>
               </div>
             </div>
           </div>
 
-          {/* SKELETON OR BLANK CASE RENDERING */}
-          {sortedSkills.length === 0 ? (
-            <div className="border border-dashed border-slate-800 p-12 text-center bg-[#0d0d0f] space-y-3">
-              <X className="w-10 h-10 text-red-500 mx-auto opacity-70" />
-              <h4 className="text-sm font-mono font-bold uppercase tracking-wider text-slate-200">Nenhuma skill jurídica localizada</h4>
-              <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
-                Tente reajustar seus valores de Quality Score ou remova a especificação de palavra-chave para recuperar a consulta das Arcadas.
-              </p>
-              <button
-                onClick={handleClearFilters}
-                className="border border-slate-800 hover:border-red-500 bg-[#121214] text-xs font-mono text-slate-300 px-4 py-2 mt-2 uppercase transition-all"
-              >
-                Limpar todos os filtros
-              </button>
-            </div>
+          {/* Result states */}
+          {isLoading ? (
+            <SkillGridSkeleton viewMode={viewMode} />
+          ) : error ? (
+            <ErrorState message={error} onRetry={retry} />
+          ) : items.length === 0 ? (
+            activeFilterCount > 0 ? (
+              <EmptyFilteredState onClear={handleClearFilters} />
+            ) : (
+              <EmptyCatalogState />
+            )
           ) : (
-            /* Skills output with viewmode integration */
-            <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" : "space-y-3"}>
-              {sortedSkills.slice(0, visibleCount).map((skill) => (
-                <SkillCard
-                  key={skill.id}
-                  skill={skill}
-                  onSelect={onSelectSkill}
-                />
-              ))}
-            </div>
-          )}
+            <>
+              {viewMode === "grid" ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[1px] bg-border">
+                  {featuredSkill && (
+                    <SkillCard skill={featuredSkill} onSelect={onSelectSkill} featured />
+                  )}
+                  {remainingItems.map((skill) => (
+                    <React.Fragment key={skill.id}>
+                      <SkillCard skill={skill} onSelect={onSelectSkill} />
+                    </React.Fragment>
+                  ))}
+                </div>
+              ) : (
+                <div className="divide-y divide-[#1a1a1e] border border-border">
+                  {items.map((skill) => (
+                    <React.Fragment key={skill.id}>
+                      <SkillCard skill={skill} onSelect={onSelectSkill} />
+                    </React.Fragment>
+                  ))}
+                </div>
+              )}
 
-          {/* SCROLL SKELETON LOADERS CONTROLLER & INCREMENTAL TRIGGER */}
-          {visibleCount < sortedSkills.length && (
-            <div className="pt-4 text-center">
-              <button
-                id="btn-increment-infinite-scroll"
-                disabled={loadingMore}
-                onClick={handleLoadMore}
-                className="cursor-pointer border border-[#27272a] hover:border-red-500 bg-[#0c0c0e] hover:bg-[#141416] text-xs font-mono text-slate-300 font-semibold px-8 py-3 uppercase tracking-wider transition-all disabled:opacity-50 inline-flex items-center gap-2"
-              >
-                {loadingMore ? (
-                  <>
-                    <RefreshCw className="w-4.5 h-4.5 animate-spin text-red-500" />
-                    Buscando próximas skills...
-                  </>
-                ) : (
-                  "Carregar mais catalogados"
-                )}
-              </button>
-            </div>
-          )}
+              {/* Infinite scroll sentinel */}
+              <div ref={sentinelRef} className="h-px" aria-hidden />
 
+              {isLoadingMore && (
+                <div className="flex items-center justify-center gap-2 py-6 text-xs font-mono text-xmuted">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Carregando…
+                </div>
+              )}
+
+              {!hasMore && items.length > 0 && (
+                <p className="text-center text-[10px] font-mono text-xmuted uppercase tracking-widest py-6">
+                  {items.length} de {totalCount} skills
+                </p>
+              )}
+            </>
+          )}
         </div>
       </div>
 
-      {/* SECTION 7: FAQ Pedagógico de Perguntas Frequentes colapsável (FAQAccordion) */}
-      <div className="max-w-4xl mx-auto py-12 px-4 border-t border-[#1b1b1f] mt-12">
-        <div className="text-center mb-8">
-          <HelpCircle className="w-8 h-8 text-red-500 mx-auto mb-2" />
-          <h3 className="text-lg font-bold text-white tracking-tight uppercase">Manual Pedagógico Sanfran.md</h3>
-          <p className="text-xs text-slate-400 mt-1">Esclareça suas principais dúvidas sobre o uso e a licença aberta das Skills</p>
-        </div>
+      {/* ============================================================ */}
+      {/* CTA BANNER                                                    */}
+      {/* ============================================================ */}
+      
+              {/* ============================================================ */}
+      {/* FAQ                                                           */}
+      {/* ============================================================ */}
+      <div className="border-t border-border">
+        <div className="max-w-3xl mx-auto px-4 py-16">
+          <div className="flex items-center gap-2 mb-1">
+            <HelpCircle className="w-4 h-4 text-xmuted" />
+            <span className="font-mono text-[10px] uppercase tracking-widest text-xmuted">Perguntas Frequentes</span>
+          </div>
+          <h2 className="text-2xl font-bold text-foreground mb-10">Manual Sanfran.md</h2>
 
-        <div className="space-y-4">
-          {FAQS.map((faq, idx) => {
-            const isOpen = activeFaq === idx;
-            return (
-              <div
-                key={idx}
-                className="border border-[#232328] bg-[#0c0c0f] p-4 transition-all"
-              >
-                <button
-                  onClick={() => toggleFaq(idx)}
-                  className="w-full flex items-center justify-between text-left text-xs sm:text-sm font-bold text-slate-100 uppercase tracking-tight duration-150 focus:outline-none focus:text-red-400"
-                >
-                  <span>• {faq.question}</span>
-                  <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${isOpen ? "rotate-180 text-red-500" : ""}`} />
-                </button>
-                {isOpen && (
-                  <p className="mt-3 text-xs sm:text-[13px] leading-relaxed text-slate-400 pl-3 border-l-2 border-l-red-600 font-sans font-light animate-fade-in whitespace-pre-wrap select-text">
-                    {faq.answer}
-                  </p>
-                )}
-              </div>
-            );
-          })}
+          <div className="divide-y divide-[#1a1a1e]">
+            {FAQS.map((faq, idx) => {
+              const isOpen = activeFaq === idx;
+              return (
+                <div key={idx}>
+                  <button
+                    onClick={() => toggleFaq(idx)}
+                    className="w-full flex items-center justify-between gap-4 py-4 text-left group"
+                  >
+                    <span className={`text-sm font-medium transition-colors ${isOpen ? "text-foreground" : "text-foreground group-hover:text-foreground"}`}>
+                      {faq.question}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-muted shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180 text-primary" : ""}`} />
+                  </button>
+                  {isOpen && (
+                    <p className="pb-5 text-sm text-muted leading-relaxed font-light pl-0 border-l-0">
+                      {faq.answer}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
+      {/* Create Skill Modal with optimistic updates */}
+      <CreateSkillModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSkillCreated={handleOptimisticCreate}
+        currentUserId={user?.id ?? ""}
+      />
+
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
+
+function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 border border-border bg-card text-muted text-[11px] font-mono px-2.5 py-1">
+      {label}
+      <button onClick={onRemove} aria-label={`Remover filtro ${label}`} className="hover:text-foreground transition-colors">
+        <X className="w-2.5 h-2.5" />
+      </button>
+    </span>
+  );
+}
+
+function SkillGridSkeleton({ viewMode }: { viewMode: "grid" | "list" }) {
+  const count = viewMode === "grid" ? 6 : 4;
+  const className = viewMode === "grid"
+    ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-card-hover"
+    : "divide-y divide-[#1a1a1e] border border-border";
+  return (
+    <div className={className}>
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="bg-card p-4 h-[200px] animate-pulse space-y-3">
+          <div className="h-2 w-1/4 bg-card-hover rounded" />
+          <div className="h-4 w-3/4 bg-card-hover rounded" />
+          <div className="h-3 w-full bg-card-hover rounded" />
+          <div className="h-3 w-5/6 bg-card-hover rounded" />
+          <div className="mt-4 space-y-2">
+            <div className="h-1 w-full bg-card-hover rounded" />
+            <div className="h-1 w-full bg-card-hover rounded" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="border border-[#2a1a1a] bg-[#100d0d] p-10 text-center space-y-3">
+      <AlertTriangle className="w-8 h-8 text-red-700 mx-auto" />
+      <h4 className="text-sm font-semibold text-slate-200">Erro ao carregar</h4>
+      <p className="text-xs text-muted max-w-sm mx-auto">{message}</p>
+      <button onClick={onRetry} className="inline-flex items-center gap-2 border border-border bg-card text-xs font-mono text-foreground px-4 py-2 hover:text-foreground transition-colors">
+        <RefreshCw className="w-3 h-3" /> Tentar novamente
+      </button>
+    </div>
+  );
+}
+
+function EmptyFilteredState({ onClear }: { onClear: () => void }) {
+  return (
+    <div className="border border-border p-10 text-center space-y-3">
+      <X className="w-8 h-8 text-xmuted mx-auto" />
+      <h4 className="text-sm font-semibold text-foreground">Nenhuma skill encontrada</h4>
+      <p className="text-xs text-xmuted max-w-sm mx-auto">
+        Ajuste o score mínimo ou remova algum filtro para ampliar os resultados.
+      </p>
+      <button onClick={onClear} className="inline-flex items-center gap-2 border border-border bg-card text-xs font-mono text-muted px-4 py-2 hover:text-foreground transition-colors">
+        Limpar filtros
+      </button>
+    </div>
+  );
+}
+
+function EmptyCatalogState({ onCreate }: { onCreate: () => void }) {
+  return (
+    <div className="border border-border p-10 text-center space-y-3">
+      <Inbox className="w-8 h-8 text-xmuted mx-auto" />
+      <h4 className="text-sm font-semibold text-foreground">Catálogo vazio</h4>
+      <p className="text-xs text-xmuted max-w-sm mx-auto">
+        Seja o primeiro a publicar uma skill jurídica.
+      </p>
+      <button onClick={onCreate} className="inline-flex items-center gap-2 border border-border bg-card text-xs font-mono text-muted px-4 py-2 hover:text-foreground transition-colors">
+        Criar Skill
+      </button>
     </div>
   );
 }

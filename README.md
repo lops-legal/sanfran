@@ -42,6 +42,10 @@ Acesse o Lex: [Começar no Lex](./apps/lex/README.md)
 ## Observabilidade
 Acesse o dashboard de monitoramento em tempo real: [Dashboard](/dashboard)
 
+### UI/Overlay de Revisão Humana
+Quando o grafo pausa para revisão humana, um overlay será exibido permitindo ao usuário editar o draft da skill e continuar a entrevista via `/interview/continue`. Veja a documentação detalhada em [docs/UI-Overlay.md](./docs/UI-Overlay.md).
+
+
 ## Documentação
 - `docs/visao.md` — visão de produto, posicionamento, não‑objetivos
 - `docs/arquitetura.md` — arquitetura técnica e stack

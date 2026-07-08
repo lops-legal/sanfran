@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { X, User, Bell, Shield, Globe, Palette, Key, ChevronRight, Check } from "lucide-react";
+import { toast } from "./Toast";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -29,6 +30,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   const handleSave = () => {
     setSaved(true);
+    toast.success("Configurações salvas", "Suas preferências foram atualizadas com sucesso.");
     setTimeout(() => setSaved(false), 2000);
   };
 
@@ -38,7 +40,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="w-full max-w-3xl mx-4 bg-[#0c0c0e] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
-        
+
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
           <div>
@@ -62,11 +64,10 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               <button
                 key={id}
                 onClick={() => setActiveSection(id)}
-                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-sans transition-all duration-200 cursor-pointer mb-0.5 ${
-                  activeSection === id
+                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-sans transition-all duration-200 cursor-pointer mb-0.5 ${activeSection === id
                     ? "bg-white/10 text-white font-medium"
                     : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
-                }`}
+                  }`}
               >
                 <Icon className="w-4 h-4 shrink-0" />
                 {label}
@@ -138,11 +139,10 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                       <button
                         key={t}
                         onClick={() => setTheme(t)}
-                        className={`flex-1 py-3 rounded-xl border text-[12px] font-mono transition-all ${
-                          theme === t
+                        className={`flex-1 py-3 rounded-xl border text-[12px] font-mono transition-all ${theme === t
                             ? "border-orange-500 bg-orange-500/10 text-orange-400"
                             : "border-white/10 bg-white/5 text-slate-400 hover:border-white/20"
-                        }`}
+                          }`}
                       >
                         {t === "dark" ? "Escuro" : "Ultra Escuro"}
                       </button>
@@ -245,7 +245,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 </div>
                 <div className="space-y-2">
                   <p className="text-[11px] font-mono text-slate-400 uppercase tracking-wider">Integrações Ativas</p>
-                  {["ChatGPT Plugin", "Claude Projects", "Cursor Rules"].map((i) => (
+                  {["Cursor Rules"].map((i) => (
                     <div key={i} className="flex items-center justify-between p-3 bg-white/5 border border-white/5 rounded-xl">
                       <span className="text-[12px] font-mono text-slate-300">{i}</span>
                       <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">

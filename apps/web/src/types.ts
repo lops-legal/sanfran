@@ -1,5 +1,6 @@
 export interface LegalSkill {
   id: string;
+  slug?: string;
   name: string;
   ownerName: string; // e.g., "são francisco", "Garra-Aberta"
   ownerAvatar: string; // Emoji or short SVG
@@ -42,7 +43,8 @@ export interface ChatMessage {
   sender: "user" | "lex";
   text: string;
   status?: "typing" | "done" | "error";
-  generatedSkillMarkdown?: string; // Optional field if Lex generates a SKILL.md
+  generatedSkillMarkdown?: string; // Optional field for auto‑generated SKILL.md content
+  thoughts?: string[]; // Intermediate agent steps/thoughts
 }
 
 export interface VerticalCategory {

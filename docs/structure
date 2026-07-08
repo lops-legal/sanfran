@@ -1,0 +1,34 @@
+
+
+Analisando a estrutura real do seu repositório e excluindo os arquivos e diretórios que você mencionou (templates, scripts soltos de testes, caches e amostras), os módulos reais que compõem a arquitetura da sua aplicação são:
+
+### 1. Frontend Web (Interface do Usuário)
+* **Localização:** `apps/web`
+* **Descrição:** É a interface principal (desenvolvida em React/TSX) onde os usuários finais interagem. Inclui os componentes visuais, como o `LexBot.tsx`, e é responsável por se comunicar com os backends.
+
+### 2. Backend Principal (Python / FastAPI)
+* **Localização:** `lex_backend/api`, `lex_backend/services` e `lex_backend/utils`
+* **Descrição:** O servidor HTTP robusto em Python. Ele cuida do roteamento (FastAPI), lógica de negócios, e persistência de dados. Nota-se também que ele usa SQLite (`lex.db`) com gerenciamento de migrações (`alembic.ini`).
+
+### 3. Motor de Grafos e IA (Graph Engine)
+* **Localização:** `lex_backend/graph`
+* **Descrição:** É o "cérebro" das operações complexas de IA. Ele orquestra os nós de decisão e fluxos da aplicação (como por exemplo o `nodes/self_review.py`). Funciona acoplado ao backend Python, executando os fluxos (jobs).
+
+### 4. API Secundária / Microsserviço (Go)
+* **Localização:** `apps/api`
+* **Descrição:** O repositório possui uma estrutura em linguagem Go (`go.mod`, `main_test.go`). Isso indica que existe um serviço ou API secundária projetada possivelmente para processamentos de alta performance ou uma responsabilidade separada do backend Python.
+
+### 5. Repositório de Skills Base
+* **Localização:** `skills_repo` (e conexões com o `antigravity-awesome-skills`)
+* **Descrição:** É onde ficam armazenadas as definições finais e validadas de conhecimento e fluxos do bot (em Markdown), separados dos arquivos experimentais.
+
+### 6. Módulo Lex Auxiliar
+* **Localização:** `apps/lex`
+* **Descrição:** Um módulo complementar. Dependendo da implementação, pode ser um pacote compartilhado, um CLI auxiliar para interagir com o ecossistema, ou lógicas adicionais encapsuladas.
+
+---
+
+**Resumo da interação entre eles:**
+O usuário acessa o **Frontend (`apps/web`)**, que envia os comandos para o **Backend Principal (`lex_backend`)**. O Backend lê/escreve no banco de dados e chama o **Motor de Grafos (`lex_backend/graph`)**, que por sua vez utiliza os parâmetros definidos no **Repositório de Skills** para gerar os passos e retornos de inteligência artificial. Existe ainda um **Microsserviço em Go (`apps/api`)** que provavelmente divide as responsabilidades com o Python para tarefas específicas da plataforma.
+
+A análise agora está estritamente fiel ao código-fonte do seu workspace. Há algum módulo específico pelo qual você deseja começar a planejar a implementação ou refatoração?
