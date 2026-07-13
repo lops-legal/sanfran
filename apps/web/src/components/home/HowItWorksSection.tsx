@@ -45,7 +45,7 @@ export function HowItWorksSection() {
         <section id="como-funciona" className="py-20 md:py-28 bg-[#F9F7F5]">
             <div className="container max-w-7xl mx-auto px-4">
                 <div ref={sectionRef} className="text-center mb-14">
-                    <div className="clause-header justify-center mb-6">CLÁUSULA SEGUNDA — DO MECANISMO</div>
+                    
                     <h2 className="text-3xl md:text-4xl font-bold mb-3 text-[#3E2B1E]">Como qualquer skill funciona</h2>
                     <p className="text-[#8B7D6B] max-w-xl mx-auto text-sm">Três passos. Nenhuma integração. Nenhuma API.</p>
                 </div>

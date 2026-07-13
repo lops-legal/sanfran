@@ -57,7 +57,7 @@ export function FeaturedSkillsSection() {
         <section id="skills" className="py-20 md:py-28 bg-[#F9F7F5]">
             <div className="container max-w-7xl mx-auto px-4">
                 <div ref={sectionRef} className="text-center mb-14">
-                    <div className="clause-header justify-center mb-6">CLÁUSULA TERCEIRA — DO CATÁLOGO</div>
+                    
                     <h2 className="text-3xl md:text-4xl font-bold mb-3 text-[#3E2B1E]">Skills em destaque</h2>
                     <p className="text-[#8B7D6B] max-w-xl mx-auto text-sm">Seis áreas do direito. Seis documentos de instrução prontos para usar.</p>
                 </div>

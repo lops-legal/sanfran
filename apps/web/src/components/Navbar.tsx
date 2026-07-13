@@ -1,60 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Scale, X, Sun, Moon, Coffee, User as UserIcon, LogOut, Shield } from "lucide-react";
+import { Scale, X, User as UserIcon, LogOut, Shield } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { AuthModal } from "./AuthModal";
-
-function ThemeSwitcher() {
-  const [theme, setTheme] = useState<"dark" | "light" | "cream">("dark");
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("app-theme") as "dark" | "light" | "cream";
-    if (savedTheme) {
-      setTheme(savedTheme);
-      document.documentElement.className = `theme-${savedTheme}`;
-    } else {
-      document.documentElement.className = "theme-dark";
-    }
-  }, []);
-
-  const handleThemeChange = (newTheme: "dark" | "light" | "cream") => {
-    setTheme(newTheme);
-    localStorage.setItem("app-theme", newTheme);
-    document.documentElement.className = `theme-${newTheme}`;
-  };
-
-  return (
-    <div className="flex items-center gap-1 bg-card border border-border p-1 rounded-full shadow-sm">
-      <button
-        onClick={() => handleThemeChange("light")}
-        className={`p-1.5 rounded-full transition-colors ${
-          theme === "light" ? "bg-primary text-white" : "text-muted hover:text-foreground"
-        }`}
-        title="Tema Claro"
-      >
-        <Sun className="w-3.5 h-3.5" />
-      </button>
-      <button
-        onClick={() => handleThemeChange("dark")}
-        className={`p-1.5 rounded-full transition-colors ${
-          theme === "dark" ? "bg-primary text-white" : "text-muted hover:text-foreground"
-        }`}
-        title="Tema Escuro"
-      >
-        <Moon className="w-3.5 h-3.5" />
-      </button>
-      <button
-        onClick={() => handleThemeChange("cream")}
-        className={`p-1.5 rounded-full transition-colors ${
-          theme === "cream" ? "bg-primary text-white" : "text-muted hover:text-foreground"
-        }`}
-        title="Tema Creme"
-      >
-        <Coffee className="w-3.5 h-3.5" />
-      </button>
-    </div>
-  );
-}
 
 export default function Navbar() {
   // Task 24: persist slack banner dismissal in localStorage so it stays dismissed on reload
@@ -134,7 +82,7 @@ export default function Navbar() {
           </nav>
 
           <div className="flex items-center gap-4">
-            <ThemeSwitcher />
+
             
             {user ? (
               <div className="relative">

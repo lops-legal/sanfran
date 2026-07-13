@@ -14,7 +14,6 @@ module.exports = {
     "plugin:react-hooks/recommended",
   ],
   rules: {
-    // Relax rules that fight real-world code
     "@typescript-eslint/no-explicit-any": "warn",
     "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
     "react-hooks/exhaustive-deps": "warn",

@@ -9,7 +9,7 @@ export function FinalCTASection() {
         <section className="py-24 md:py-32 bg-[#F9F7F5]">
             <div className="container max-w-2xl mx-auto px-4">
                 <div ref={ref} className={`scale-reveal ${inView ? "is-visible" : ""} text-center space-y-8`}>
-                    <div className="clause-header justify-center">CLÁUSULA SEXTA — DO CONVITE</div>
+                    
 
                     <h2 className="text-3xl md:text-4xl font-bold leading-tight text-[#3E2B1E]">
                         Sua IA não precisa mais se perder no direito.
