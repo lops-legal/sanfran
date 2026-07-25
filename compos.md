@@ -110,4 +110,4 @@ isso é uma melhoria opcional, não é necessário para o design funcionar.
   (`useFeaturedSkills` ou similar) confirmado no projeto. Se existir, é só trocar o botão por um
   grid de `SkillCard` ali dentro.
 - **Dark mode**: não ajustei porque não sei se a home usa. Avisar se precisar dos valores HSL
-  escuros da paleta creme/café.
+  escuros da paleta creme/café. 

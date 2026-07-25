@@ -1,9 +1,9 @@
 import React from "react";
 import { HeroSection } from "../components/home/HeroSection";
 import { HowItWorksSection } from "../components/home/HowItWorksSection";
+import { WhyUseSkillsSection } from "../components/home/WhyUseSkillsSection";
 import { FeaturedSkillsSection } from "../components/home/FeaturedSkillsSection";
-import { TransitionQuote } from "../components/home/TransitionQuote";
-import { TrustSection } from "../components/home/TrustSection";
+import { WhyUseOurMCPSection } from "../components/home/WhyUseOurMCPSection";
 import { FinalCTASection } from "../components/home/FinalCTASection";
 import { ScrollProgressBar } from "../components/home/ScrollProgressBar";
 
@@ -18,16 +18,16 @@ export default function Home() {
 
       {/* Section Dividers */}
       <div className="section-divider" />
+      <WhyUseSkillsSection />
+
+      <div className="section-divider" />
       <HowItWorksSection />
 
       <div className="section-divider" />
       <FeaturedSkillsSection />
 
       <div className="section-divider" />
-      <TransitionQuote />
-
-      <div className="section-divider" />
-      <TrustSection />
+      <WhyUseOurMCPSection />
 
       <div className="section-divider" />
       <FinalCTASection />
