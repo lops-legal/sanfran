@@ -7,3 +7,6 @@
 banco/skills/
 # Node modules (optional)
 node_modules/
+
+# MCP local development servers
+MCP/
