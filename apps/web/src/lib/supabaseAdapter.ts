@@ -85,7 +85,7 @@ export const createSupabaseAdapter = (): SkillDataAdapter => {
         return mockAdapter(params, signal);
       }
 
-      return response.json() as Promise<SkillQueryResult>;
+      return (await response.json()) as SkillQueryResult;
     } catch (err) {
       // Fallback para mock em caso de erro de rede
       if (err instanceof DOMException && err.name === "AbortError") throw err;
