@@ -28,7 +28,7 @@ function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
       nodes.push(
         <code
           key={`${keyPrefix}-c-${i++}`}
-          className="px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-[11px] font-mono"
+          className="px-1.5 py-0.5 rounded bg-[#C9A84C]/15 border border-[#C9A84C]/20 text-[#C9A84C] text-[11px] font-mono"
         >
           {token.slice(1, -1)}
         </code>
@@ -42,7 +42,7 @@ function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
             href={m[2]}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-orange-400 hover:text-orange-300 underline underline-offset-2 decoration-orange-500/40"
+            className="text-[#C9A84C] hover:text-[#E0C060] underline underline-offset-2 decoration-[#C9A84C]/40"
           >
             {m[1]}
           </a>
@@ -50,13 +50,13 @@ function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
       }
     } else if (token.startsWith("**")) {
       nodes.push(
-        <strong key={`${keyPrefix}-b-${i++}`} className="text-slate-100 font-semibold">
+        <strong key={`${keyPrefix}-b-${i++}`} className="text-[#E8DDD0] font-semibold">
           {token.slice(2, -2)}
         </strong>
       );
     } else if (token.startsWith("*")) {
       nodes.push(
-        <em key={`${keyPrefix}-i-${i++}`} className="text-slate-300 italic">
+        <em key={`${keyPrefix}-i-${i++}`} className="text-[#C4B5A0] italic">
           {token.slice(1, -1)}
         </em>
       );
@@ -105,7 +105,7 @@ export function parseSkillMarkdown(raw: string): ParsedSkillMarkdown {
     const text = paraBuffer.join(" ").trim();
     if (text) {
       nodes.push(
-        <p key={key} className="text-sm text-slate-300 leading-relaxed mb-3 font-sans">
+        <p key={key} className="text-sm text-[#C4B5A0] leading-relaxed mb-3 font-sans">
           {renderInline(text, key)}
         </p>
       );
@@ -125,12 +125,12 @@ export function parseSkillMarkdown(raw: string): ParsedSkillMarkdown {
               <span
                 className={`mt-0.5 flex items-center justify-center w-4 h-4 rounded-sm border shrink-0 text-[10px] font-bold ${item.checked
                   ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400"
-                  : "border-slate-700 text-transparent"
+                  : "border-[#5D4432]/40 text-transparent"
                   }`}
               >
-                {item.checked ? "✓" : ""}
+                {item.checked ? "\u2713" : ""}
               </span>
-              <span className={`leading-relaxed ${item.checked ? "text-slate-500 line-through" : "text-slate-300"}`}>
+              <span className={`leading-relaxed ${item.checked ? "text-[#8B7D6B] line-through" : "text-[#C4B5A0]"}`}>
                 {renderInline(item.text, `${key}-${idx}`)}
               </span>
             </li>
@@ -141,8 +141,8 @@ export function parseSkillMarkdown(raw: string): ParsedSkillMarkdown {
       nodes.push(
         <ol key={key} className="space-y-1.5 mb-4 pl-1">
           {listBuffer.map((item, idx) => (
-            <li key={`${key}-${idx}`} className="flex gap-2.5 text-sm text-slate-300 leading-relaxed">
-              <span className="font-mono text-orange-400/80 text-xs mt-0.5 shrink-0">
+            <li key={`${key}-${idx}`} className="flex gap-2.5 text-sm text-[#C4B5A0] leading-relaxed">
+              <span className="font-mono text-[#C9A84C]/80 text-xs mt-0.5 shrink-0">
                 {String(idx + 1).padStart(2, "0")}
               </span>
               <span>{renderInline(item.text, `${key}-${idx}`)}</span>
@@ -154,8 +154,8 @@ export function parseSkillMarkdown(raw: string): ParsedSkillMarkdown {
       nodes.push(
         <ul key={key} className="space-y-1.5 mb-4 pl-1">
           {listBuffer.map((item, idx) => (
-            <li key={`${key}-${idx}`} className="flex gap-2.5 text-sm text-slate-300 leading-relaxed">
-              <span className="text-orange-500 mt-1.5 text-[8px] shrink-0">●</span>
+            <li key={`${key}-${idx}`} className="flex gap-2.5 text-sm text-[#C4B5A0] leading-relaxed">
+              <span className="text-[#C9A84C] mt-1.5 text-[8px] shrink-0">&bull;</span>
               <span>{renderInline(item.text, `${key}-${idx}`)}</span>
             </li>
           ))}
@@ -181,13 +181,13 @@ export function parseSkillMarkdown(raw: string): ParsedSkillMarkdown {
         i++;
       }
       nodes.push(
-        <div key={`code-${i}`} className="mb-4 rounded-md overflow-hidden border border-[#27272a] bg-[#0a0a0c]">
+        <div key={`code-${i}`} className="mb-4 rounded-lg overflow-hidden border border-[#3D3226] bg-[#1E180F]">
           {lang && (
-            <div className="px-3 py-1 text-[10px] font-mono text-slate-500 border-b border-[#1f1f24] uppercase tracking-wider">
+            <div className="px-3 py-1 text-[10px] font-mono text-[#8B7D6B] border-b border-[#3D3226] uppercase tracking-wider">
               {lang}
             </div>
           )}
-          <pre className="p-3 overflow-x-auto text-[11px] font-mono text-emerald-300 leading-relaxed">
+          <pre className="p-3 overflow-x-auto text-[11px] font-mono text-[#C9A84C] leading-relaxed">
             <code>{codeLines.join("\n")}</code>
           </pre>
         </div>
@@ -208,7 +208,7 @@ export function parseSkillMarkdown(raw: string): ParsedSkillMarkdown {
         nodes.push(
           <h2
             key={`h-${i}`}
-            className="text-lg font-bold text-slate-50 mt-6 mb-3 pb-2 border-b border-[#27272a] first:mt-0 font-sans tracking-tight"
+            className="text-lg font-bold text-[#E8DDD0] mt-6 mb-3 pb-2 border-b border-[#3D3226] first:mt-0 font-sans tracking-tight"
           >
             {renderInline(text, `h-${i}`)}
           </h2>
@@ -217,15 +217,15 @@ export function parseSkillMarkdown(raw: string): ParsedSkillMarkdown {
         nodes.push(
           <h3
             key={`h-${i}`}
-            className="flex items-center gap-2 text-sm font-bold text-orange-400 uppercase tracking-wider mt-5 mb-2.5 font-mono"
+            className="flex items-center gap-2 text-sm font-bold text-[#C9A84C] uppercase tracking-wider mt-5 mb-2.5 font-mono"
           >
-            <span className="w-1 h-3.5 bg-orange-500 rounded-full shrink-0" />
+            <span className="w-1 h-3.5 bg-[#C9A84C] rounded-full shrink-0" />
             {renderInline(text, `h-${i}`)}
           </h3>
         );
       } else {
         nodes.push(
-          <h4 key={`h-${i}`} className="text-xs font-bold text-slate-200 uppercase tracking-wide mt-4 mb-2 font-mono">
+          <h4 key={`h-${i}`} className="text-xs font-bold text-[#E8DDD0] uppercase tracking-wide mt-4 mb-2 font-mono">
             {renderInline(text, `h-${i}`)}
           </h4>
         );
@@ -238,7 +238,7 @@ export function parseSkillMarkdown(raw: string): ParsedSkillMarkdown {
     if (/^(---|\*\*\*)\s*$/.test(line.trim())) {
       flushPara(`p-${i}`);
       flushList(`l-${i}`);
-      nodes.push(<hr key={`hr-${i}`} className="border-t border-[#27272a] my-5" />);
+      nodes.push(<hr key={`hr-${i}`} className="border-t border-[#3D3226] my-5" />);
       i++;
       continue;
     }

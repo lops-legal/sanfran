@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 interface UseInViewOptions {
     threshold?: number;
@@ -17,11 +17,18 @@ export function useInView<T extends HTMLElement>({
     rootMargin = "0px",
     triggerOnce = true,
 }: UseInViewOptions = {}) {
-    const ref = useRef<T | null>(null);
+    const [node, setNode] = useState<T | null>(null);
     const [inView, setInView] = useState(false);
 
+    // A callback ref notifies the hook when conditionally-rendered content is
+    // mounted. A static useRef would not retrigger the effect if the element
+    // did not exist during the hook's first render (for example, while data
+    // was still loading).
+    const ref = useCallback((element: T | null) => {
+        setNode(element);
+    }, []);
+
     useEffect(() => {
-        const node = ref.current;
         if (!node) return;
 
         const prefersReduced = window.matchMedia(
@@ -47,7 +54,7 @@ export function useInView<T extends HTMLElement>({
 
         observer.observe(node);
         return () => observer.disconnect();
-    }, [threshold, rootMargin, triggerOnce]);
+    }, [node, threshold, rootMargin, triggerOnce]);
 
     return { ref, inView };
 }

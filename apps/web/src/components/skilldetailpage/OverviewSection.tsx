@@ -19,12 +19,12 @@ function Field({
 }) {
   return (
     <div className={`flex gap-3 ${full ? "sm:col-span-2" : ""}`}>
-      <div className="w-8 h-8 rounded-md bg-[#18181c] border border-[#27272a] flex items-center justify-center shrink-0 mt-0.5">
-        <Icon className="w-4 h-4 text-orange-400" />
+      <div className="w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center shrink-0 mt-0.5">
+        <Icon className="w-4 h-4 text-primary" />
       </div>
       <div className="min-w-0">
-        <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider block mb-0.5">{label}</span>
-        <div className="text-sm text-slate-200 leading-relaxed font-sans">{children}</div>
+        <span className="text-[10px] font-mono text-muted uppercase tracking-wider block mb-0.5">{label}</span>
+        <div className="text-sm text-foreground leading-relaxed">{children}</div>
       </div>
     </div>
   );
@@ -41,7 +41,7 @@ export default function OverviewSection({ skill }: OverviewSectionProps) {
           href={skill.authorProfile || "#"}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-orange-400 hover:text-orange-300 hover:underline"
+          className="text-primary hover:text-accent hover:underline transition-colors"
         >
           @{skill.ownerName}
         </a>

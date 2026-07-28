@@ -3,8 +3,10 @@ import { LegalSkill } from "../types";
 import { VERTICALS, TASK_CATEGORIES, FAQS } from "../data";
 import SkillCard from "./SkillCard";
 import {
-  Search, Sliders, Grid, List, HelpCircle, ChevronDown, RefreshCw, X,
-  Scale, AlertTriangle, Inbox, Loader2, SlidersHorizontal, ArrowUpRight, Plus,
+  Search, X, Loader2, AlertTriangle, Inbox, Plus,
+  ChevronLeft, ChevronRight, ChevronDown,
+  Download, Shield, Verified, Gavel, HelpCircle, ClipboardList,
+  Sparkles, TrendingUp,
 } from "lucide-react";
 import {
   useInfiniteSkills, useInfiniteScrollSentinel,
@@ -12,9 +14,14 @@ import {
 } from "./useInfiniteSkills";
 import { createSupabaseAdapter } from "../lib/supabaseAdapter";
 import { useCatalogStats } from "../hooks/useCatalogStats";
+import { useInView } from "../hooks/useInView";
 import CreateSkillModal from "./CreateSkillModal";
 import { toast } from "./Toast";
 import { useAuth } from "../contexts/AuthContext";
+
+// Import cinematic styles for paper textures & reveals
+import "../styles/home-cinematic.css";
+
 // ---------------------------------------------------------------------------
 // URL Sync helpers
 // ---------------------------------------------------------------------------
@@ -30,11 +37,7 @@ function readSearchParams() {
 }
 
 function pushSearchParams(params: {
-  q: string;
-  vertical: string | null;
-  category: string | null;
-  score: number;
-  sort: SortOption;
+  q: string; vertical: string | null; category: string | null; score: number; sort: SortOption;
 }) {
   const p = new URLSearchParams();
   if (params.q) p.set("q", params.q);
@@ -49,26 +52,23 @@ function pushSearchParams(params: {
 // ---------------------------------------------------------------------------
 // Props & constants
 // ---------------------------------------------------------------------------
-interface MarketplaceProps {
-  onSelectSkill: (skill: LegalSkill) => void;
-}
+interface MarketplaceProps { onSelectSkill: (skill: LegalSkill) => void; }
 
 const PAGE_SIZE = 12;
 
-const SORT_TABS: { id: SortOption; label: string }[] = [
+const SORT_OPTIONS: { id: SortOption; label: string }[] = [
   { id: "stars", label: "Popular" },
   { id: "score", label: "Qualidade" },
   { id: "hot", label: "Em alta" },
   { id: "recent", label: "Recente" },
 ];
 
-// Vertical accent colors (minimal, no glow)
-const VERTICAL_ACCENT: Record<string, { dot: string; border: string; text: string }> = {
-  Trabalhista: { dot: "bg-red-500", border: "border-primary", text: "text-primary-dim" },
-  LGPD: { dot: "bg-emerald-500", border: "border-emerald-500", text: "text-emerald-400" },
-  Consumidor: { dot: "bg-amber-500", border: "border-amber-500", text: "text-amber-400" },
-  Societario: { dot: "bg-blue-500", border: "border-blue-500", text: "text-blue-400" },
-  Processual: { dot: "bg-purple-500", border: "border-purple-500", text: "text-purple-400" },
+const VERTICAL_ICONS: Record<string, string> = {
+  Trabalhista: "briefcase",
+  LGPD: "shield",
+  Consumidor: "shopping-bag",
+  Societario: "file-signature",
+  Processual: "scale",
 };
 
 // ---------------------------------------------------------------------------
@@ -82,574 +82,528 @@ export default function Marketplace({ onSelectSkill }: MarketplaceProps) {
   const [searchInput, setSearchInput] = useState(initial.q);
   const [selectedVertical, setSelectedVertical] = useState<string | null>(initial.vertical);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(initial.category);
-  const [minQualityScore, setMinQualityScore] = useState<number>(initial.score);
+  const [minScore, setMinScore] = useState<number>(initial.score);
+  const [minCompliance, setMinCompliance] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>(initial.sort);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
-  const [filterOpen, setFilterOpen] = useState(false); // mobile
-  const [isScrolled, setIsScrolled] = useState(false); // for sticky filter bar
+  const [currentPage, setCurrentPage] = useState(1);
+  const [highlightIndex, setHighlightIndex] = useState(0);
+  const [searchFocused, setSearchFocused] = useState(false);
 
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
   const [, startTransition] = useTransition();
 
-  // Sync URL on filter change
-  useEffect(() => {
-    pushSearchParams({ q: searchInput, vertical: selectedVertical, category: selectedCategory, score: minQualityScore, sort: sortBy });
-  }, [searchInput, selectedVertical, selectedCategory, minQualityScore, sortBy]);
+  // Scroll-reveal refs
+  const { ref: heroRef, inView: heroInView } = useInView<HTMLDivElement>({ threshold: 0.1 });
+  const { ref: highlightsRef, inView: highlightsInView } = useInView<HTMLDivElement>({ threshold: 0.15 });
+  const { ref: faqRef, inView: faqInView } = useInView<HTMLDivElement>({ threshold: 0.1 });
 
-  // Sticky header trigger
   useEffect(() => {
-    const onScroll = () => setIsScrolled(window.scrollY > 200);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+    pushSearchParams({ q: searchInput, vertical: selectedVertical, category: selectedCategory, score: minScore, sort: sortBy });
+  }, [searchInput, selectedVertical, selectedCategory, minScore, sortBy]);
 
-  // '/' shortcut
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      const active = document.activeElement;
-      if (e.key === "/" && !(active instanceof HTMLInputElement) && !(active instanceof HTMLTextAreaElement)) {
-        e.preventDefault();
-        searchInputRef.current?.focus();
+    const h = (e: KeyboardEvent) => {
+      if (e.key === "/" && !(document.activeElement instanceof HTMLInputElement)) {
+        e.preventDefault(); searchRef.current?.focus();
       }
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
   }, []);
 
   const adapter = useMemo(() => createSupabaseAdapter(), []);
 
   const { items, totalCount, isLoading, isLoadingMore, error, hasMore, loadMore, retry, mutateItems } = useInfiniteSkills({
-    adapter,
-    search: searchInput,
-    vertical: selectedVertical,
-    taskCategory: selectedCategory,
-    minQualityScore,
-    sortBy,
-    pageSize: PAGE_SIZE,
+    adapter, search: searchInput, vertical: selectedVertical, taskCategory: selectedCategory, minQualityScore: minScore, sortBy, pageSize: PAGE_SIZE,
   });
 
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const handleOptimisticCreate = useCallback((newSkill: LegalSkill) => {
-    // Instantly prepend the new skill into the visible list
-    mutateItems((prev) => [newSkill, ...prev]);
-    toast.success("Skill publicada!", `"${newSkill.name}" aparece no topo do catálogo.`);
+  const handleCreate = useCallback((s: LegalSkill) => {
+    mutateItems(prev => [s, ...prev]);
+    toast.success("Skill publicada!", `"${s.name}" aparece no topo do catálogo.`);
   }, [mutateItems]);
 
   const sentinelRef = useInfiniteScrollSentinel(loadMore, hasMore && !isLoading && !error);
 
-  const activeFilterCount =
-    (selectedVertical ? 1 : 0) + (selectedCategory ? 1 : 0) + (minQualityScore > 0 ? 1 : 0) + (searchInput ? 1 : 0);
+  const activeFilters = (selectedVertical ? 1 : 0) + (selectedCategory ? 1 : 0) + (minScore > 0 ? 1 : 0) + (searchInput ? 1 : 0) + (minCompliance ? 1 : 0);
 
-  const handleClearFilters = useCallback(() => {
+  const clearFilters = useCallback(() => {
     startTransition(() => {
-      setSearchInput("");
-      setSelectedVertical(null);
-      setSelectedCategory(null);
-      setMinQualityScore(0);
+      setSearchInput(""); setSelectedVertical(null); setSelectedCategory(null); setMinScore(0); setMinCompliance(null);
     });
   }, [startTransition]);
 
-  const verticalCounts = catalogStats.verticalCounts;
-  const totalCatalog = catalogStats.totalPublished;
-  const totalOabVerified = catalogStats.totalOabVerified; // total de skills revisadas contra OWASP Agentic Skills Top 10
+  const counts = catalogStats.verticalCounts;
+  const totalPub = catalogStats.totalPublished;
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE) || 1;
+  const toggleFaq = (i: number) => setActiveFaq(prev => prev === i ? null : i);
 
-  const toggleFaq = (idx: number) => setActiveFaq((prev) => (prev === idx ? null : idx));
+  // Derive highlights from loaded items (top 3 by quality score)
+  const highlights = useMemo(() => {
+    if (!items.length) return [];
+    return [...items]
+      .sort((a, b) => b.qualityScore - a.qualityScore)
+      .slice(0, 3)
+      .map((s, i) => ({
+        id: s.id,
+        name: s.name,
+        desc: s.description,
+        vertical: s.vertical,
+        downloads: s.starsCount,
+        score: s.qualityScore,
+        compliance: s.complianceChecked ? "Total" : s.regulatoryScore >= 80 ? "Alto" : "Moderado",
+        trending: i === 0,
+        skill: s,
+      }));
+  }, [items]);
 
-  // Bento: first result gets featured (spans 2 cols) when in grid mode with enough items
-  const featuredSkill = viewMode === "grid" && items.length >= 3 ? items[0] : null;
-  const remainingItems = featuredSkill ? items.slice(1) : items;
+  const maxHighlightPages = Math.max(0, highlights.length - 3);
+
+  const complianceStyle = (level: string) => {
+    const m: Record<string, string> = {
+      Total: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+      Alto: "bg-amber-50 text-amber-700 border border-amber-200",
+      Moderado: "bg-gray-100 text-gray-600 border border-gray-200",
+    };
+    return `pill-tag ${m[level] ?? "bg-gray-100 text-gray-600 border border-gray-200"}`;
+  };
 
   return (
-    <div id="sanfran-marketplace-root" className="text-foreground font-sans pb-24">
+    <div id="marketplace" className="bg-background text-foreground font-sans pb-section-gap">
 
-      {/* ============================================================ */}
-      {/* STICKY COMPACT FILTER BAR — appears when user scrolls past hero */}
-      {/* ============================================================ */}
-      <div
-        className={`fixed top-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border transition-all duration-300 ${
-          isScrolled ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-4 h-12 flex items-center gap-4">
-          <div className="flex items-center gap-2 text-xs font-mono text-muted shrink-0">
-            <Scale className="w-3.5 h-3.5 text-primary" />
-            <span className="text-foreground font-semibold">Sanfran.md</span>
+      {/* ======================== HERO ======================== */}
+      <section className="paper-texture paper-seda relative pt-[140px] pb-20 px-margin-desktop border-b border-border overflow-hidden" style={{ background: "linear-gradient(180deg, #fff8f5 0%, #F9F7F5 100%)" }}>
+        <div ref={heroRef} className="max-w-4xl mx-auto text-center flex flex-col items-center relative z-10">
+
+          {/* Badge */}
+          <div className={`inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-border shadow-sm mb-8 transition-all duration-700 transform ${heroInView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}>
+            <span className="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
+            <span className="text-[11px] font-mono text-muted">
+              Catálogo atualizado com <span className="font-semibold text-foreground">{statsLoading ? "..." : totalPub} skills</span>
+            </span>
           </div>
-          <div className="flex-1 flex items-center gap-2 border border-border bg-card px-3 py-1.5 max-w-md">
-            <Search className="w-3.5 h-3.5 text-muted shrink-0" />
+
+          <h1 className={`text-4xl sm:text-5xl font-bold text-foreground tracking-tight leading-[1.1] mb-5 font-serif transition-all duration-700 delay-100 transform ${heroInView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}>
+            Catálogo de Skills Jurídicas
+          </h1>
+          <p className={`text-base text-muted leading-relaxed mb-10 max-w-2xl transition-all duration-700 delay-200 transform ${heroInView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}>
+            Acesse inteligência jurídica brasileira pronta para uso em seus agentes de IA. Skills validadas por especialistas para cada área do direito.
+          </p>
+
+          {/* Search */}
+          <div className={`relative w-full max-w-2xl mb-8 transition-all duration-700 delay-300 transform ${heroInView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}>
+            <div className={`absolute inset-y-0 left-6 flex items-center pointer-events-none transition-colors duration-300 ${searchFocused ? "text-primary" : "text-muted"}`}>
+              <Search className="w-5 h-5" />
+            </div>
             <input
-              type="text"
+              ref={searchRef}
               value={searchInput}
-              onChange={(e) => startTransition(() => setSearchInput(e.target.value))}
-              placeholder="Buscar skills..."
-              className="w-full bg-transparent text-xs text-slate-200 placeholder:text-xmuted focus:outline-none"
+              onChange={e => startTransition(() => setSearchInput(e.target.value))}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+              className={`w-full pl-16 pr-20 py-5 bg-white border-2 rounded-2xl shadow-lg focus:ring-4 focus:ring-primary/10 outline-none text-sm transition-all placeholder:text-muted ${searchFocused ? "border-primary/40 shadow-primary/10" : "border-border shadow-primary/5"}`}
+              placeholder="Busque por área jurídica ou tipo de tarefa..."
             />
+            <div className="absolute inset-y-0 right-4 flex items-center">
+              <kbd className="hidden sm:inline-flex items-center px-2 py-1 text-[10px] font-mono text-muted bg-card border border-border rounded">/</kbd>
+            </div>
           </div>
-          <div className="hidden md:flex items-center gap-1">
-            {SORT_TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setSortBy(tab.id)}
-                className={`px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide transition-colors ${
-                  sortBy === tab.id ? "text-foreground bg-[#232328]" : "text-muted hover:text-foreground"
-                }`}
-              >
-                {tab.label}
-              </button>
+
+          {/* Category Chips + Create Button */}
+          <div className={`flex flex-wrap justify-center items-center gap-2 transition-all duration-700 delay-[400ms] transform ${heroInView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}>
+            <span className="text-[11px] font-mono text-muted mr-1 self-center">Populares:</span>
+            <button onClick={() => setSelectedVertical(null)}
+              className={`category-chip ${!selectedVertical ? "active" : ""}`}>Todas</button>
+            {VERTICALS.slice(0, 4).map(v => (
+              <button key={v.id} onClick={() => setSelectedVertical(selectedVertical === v.id ? null : v.id)}
+                className={`category-chip ${selectedVertical === v.id ? "active" : ""}`}>{v.name}</button>
             ))}
-          </div>
-          {activeFilterCount > 0 && (
-            <button onClick={handleClearFilters} className="shrink-0 text-[10px] font-mono text-primary-dim hover:text-red-300 uppercase tracking-wide">
-              Limpar ({activeFilterCount})
+            <div className="hidden sm:block w-px h-6 bg-border mx-2" />
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-mono font-medium rounded-full bg-accent text-white hover:bg-accent-hover transition-all hover:-translate-y-0.5 shadow-sm"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Publicar Skill
             </button>
-          )}
+          </div>
         </div>
-      </div>
+      </section>
 
-      {/* ============================================================ */}
-      {/* HERO — editorial, editorial, editorial                        */}
-      {/* ============================================================ */}
-      <div className="border-b border-border bg-background px-4 pt-14 pb-12">
-        <div className="max-w-7xl mx-auto">
-
-          
-
-          {/* Two-column hero layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-10 items-end">
-            <div>
-              <h1 className="text-4xl sm:text-5xl font-bold text-foreground tracking-tight leading-[1.08] mb-5">
-                Skills jurídicas<br />
-                <span className="text-muted font-normal">para agentes de IA</span>
-              </h1>
-              <p className="text-sm text-muted leading-relaxed max-w-xl mb-8 font-light">
-                Para todo problema do seu dia a dia jurídico, existe uma skill que pode tornar o seu agente de IA um especialista jurídico brasileiro. Mais contexto, menos alucinação.
-              </p>
-
-              {/* Search */}
-              <div className="flex items-center gap-2 border border-border bg-card px-4 py-3 max-w-xl focus-within:border-[#3a3a3e] transition-colors">
-                {isLoading && searchInput ? (
-                  <Loader2 className="w-4 h-4 text-muted shrink-0 animate-spin" />
-                ) : (
-                  <Search className="w-4 h-4 text-muted shrink-0" />
-                )}
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={searchInput}
-                  onChange={(e) => startTransition(() => setSearchInput(e.target.value))}
-                  placeholder="ex: multa rescisória, CLT, LGPD, CDC..."
-                  className="flex-1 bg-transparent text-sm text-slate-200 placeholder:text-xmuted focus:outline-none"
-                />
-                {searchInput ? (
-                  <button onClick={() => setSearchInput("")} className="text-xmuted hover:text-muted transition-colors">
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                ) : (
-                  <kbd className="hidden sm:inline font-mono text-[9px] text-xmuted border border-border px-1.5 py-0.5 rounded">
-                    /
-                  </kbd>
-                )}
+      {/* ==================== DESTAQUES ==================== */}
+      {!isLoading && highlights.length > 0 && (
+        <section className="paper-texture paper-couche py-section-gap px-margin-desktop">
+          <div ref={highlightsRef} className="max-w-[1280px] mx-auto">
+            <div className={`flex items-center justify-between mb-10 transition-all duration-700 transform ${highlightsInView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <TrendingUp className="w-4 h-4 text-accent" />
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-muted">Curadoria semanal</span>
+                </div>
+                <h2 className="text-2xl font-bold text-foreground font-serif">Destaques da Semana</h2>
+                <p className="text-sm text-muted mt-1">As skills mais relevantes para você esta semana</p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setHighlightIndex(Math.max(0, highlightIndex - 1))}
+                  disabled={highlightIndex === 0}
+                  className="w-10 h-10 flex items-center justify-center rounded-full border border-border text-muted hover:bg-white hover:border-primary/30 hover:text-primary transition-all disabled:opacity-30 disabled:hover:bg-transparent"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setHighlightIndex(Math.min(maxHighlightPages, highlightIndex + 1))}
+                  disabled={highlightIndex >= maxHighlightPages}
+                  className="w-10 h-10 flex items-center justify-center rounded-full border border-border text-muted hover:bg-white hover:border-primary/30 hover:text-primary transition-all disabled:opacity-30 disabled:hover:bg-transparent"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
               </div>
             </div>
 
-            {/* Stats panel — right column */}
-            <div className="border border-border bg-card divide-y divide-[#1e1e22]">
-              {[
-                { label: "Skills no catálogo", value: statsLoading ? "—" : totalCatalog, color: "text-foreground" },
-                { label: "OWASP Agentic Top 10", value: statsLoading ? "—" : totalOabVerified, color: "text-emerald-400" },
-                { label: "Resultado filtrado", value: isLoading ? "—" : totalCount, color: "text-foreground" },
-              ].map(({ label, value, color }) => (
-                <div key={label} className="px-5 py-3 flex items-center justify-between">
-                  <span className="text-xs text-muted font-mono">{label}</span>
-                  <span className={`font-mono text-sm font-bold tabular-nums ${color}`}>{value}</span>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {highlights.map((h, idx) => (
+                <article
+                  key={h.id}
+                  onClick={() => onSelectSkill(h.skill)}
+                  style={{ ["--reveal-delay" as string]: `${idx * 100}ms` } as React.CSSProperties}
+                  className={`reveal ${highlightsInView ? "is-visible" : ""} gradient-border-card cursor-pointer p-7 flex flex-col relative overflow-hidden ${h.trending ? "ring-1 ring-accent/20" : ""}`}
+                >
+                  {h.trending && (
+                    <div className="absolute top-0 right-0">
+                      <div className="bg-accent text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-bl-xl flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" /> Trending
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                      <Verified className="w-5 h-5 text-primary" />
+                    </div>
+                    <span className="pill-tag bg-tag-bg text-muted">{h.vertical}</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-3 leading-tight font-serif">{h.name}</h3>
+                  <p className="text-sm text-muted line-clamp-2 mb-6">{h.desc}</p>
+                  <div className="mt-auto flex items-center justify-between text-muted border-t border-border pt-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1"><Download className="w-4 h-4" /><span className="text-[11px] font-mono">{(h.downloads / 1000).toFixed(1)}k</span></div>
+                      <div className="flex items-center gap-1"><Verified className="w-4 h-4 text-accent" /><span className="text-[11px] font-mono">{h.score}%</span></div>
+                    </div>
+                    <span className={complianceStyle(h.compliance)}>{h.compliance}</span>
+                  </div>
+                </article>
               ))}
             </div>
           </div>
-        </div>
-      </div>
+        </section>
+      )}
 
-      {/* ============================================================ */}
-      {/* VERTICALS ROW                                                 */}
-      {/* ============================================================ */}
-      <div className="border-b border-border bg-background">
-        <div className="max-w-7xl mx-auto px-4 py-0 flex items-center gap-0 overflow-x-auto scrollbar-none">
-          <button
-            onClick={() => setSelectedVertical(null)}
-            className={`shrink-0 flex items-center gap-2 px-4 py-4 font-mono text-xs uppercase tracking-wide transition-colors border-b-2 -mb-px ${
-              !selectedVertical
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted hover:text-foreground"
-            }`}
-          >
-            Todas
-            <span className="text-xmuted">{statsLoading ? "…" : totalCatalog}</span>
-          </button>
-          {VERTICALS.map((v) => {
-            const accent = VERTICAL_ACCENT[v.id];
-            const isActive = selectedVertical === v.id;
-            const count = verticalCounts[v.id] ?? 0;
-            return (
-              <button
-                key={v.id}
-                onClick={() => setSelectedVertical(isActive ? null : v.id)}
-                className={`shrink-0 flex items-center gap-2 px-4 py-4 font-mono text-xs uppercase tracking-wide transition-colors border-b-2 -mb-px ${
-                  isActive
-                    ? `${accent?.border ?? "border-primary"} ${accent?.text ?? "text-primary-dim"}`
-                    : "border-transparent text-muted hover:text-foreground"
-                }`}
-              >
-                {isActive && accent && <span className={`w-1.5 h-1.5 rounded-full ${accent.dot} shrink-0`} />}
-                {v.name}
-                <span className="text-xmuted">{count}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <div className="section-divider-warm" />
 
-      {/* ============================================================ */}
-      {/* CATALOG: SIDEBAR + RESULTS                                    */}
-      {/* ============================================================ */}
-      <div className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8 items-start">
+      {/* ================== MAIN: FILTERS + GRID ================== */}
+      <main className="max-w-[1280px] mx-auto px-margin-desktop flex flex-col lg:flex-row gap-stack-lg py-section-gap">
 
-        {/* ---------- SIDEBAR ---------- */}
-        <div className="lg:sticky lg:top-14 space-y-px">
-
-          {/* Mobile toggle */}
-          <button
-            onClick={() => setFilterOpen((v) => !v)}
-            className="lg:hidden w-full flex items-center justify-between border border-border bg-card px-4 py-3 text-xs font-mono uppercase text-foreground mb-2"
-          >
-            <span className="flex items-center gap-2">
-              <SlidersHorizontal className="w-3.5 h-3.5" /> Filtros
-            </span>
-            {activeFilterCount > 0 && (
-              <span className="bg-primary text-foreground rounded-full w-4 h-4 flex items-center justify-center text-[9px] font-bold">
-                {activeFilterCount}
-              </span>
-            )}
-          </button>
-
-          <div className={`${filterOpen ? "block" : "hidden lg:block"} space-y-px`}>
-
-            {/* Header */}
-            <div className="flex items-center justify-between px-3 py-2.5 border border-border bg-card">
-              <span className="font-mono text-[10px] uppercase tracking-widest text-muted flex items-center gap-1.5">
-                <Sliders className="w-3 h-3" /> Filtros
-              </span>
-              {activeFilterCount > 0 && (
-                <button onClick={handleClearFilters} className="font-mono text-[10px] text-primary hover:text-primary-dim uppercase">
+        {/* SIDEBAR */}
+        <aside className="w-full lg:w-72 shrink-0">
+          <div className="sticky top-[100px] p-6 bg-white rounded-2xl border border-border/50 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-sm font-semibold text-foreground font-serif">Filtros</h2>
+                <p className="text-[10px] text-muted font-mono mt-0.5">Refine sua busca</p>
+              </div>
+              {activeFilters > 0 && (
+                <button onClick={clearFilters} className="text-[11px] font-mono text-accent hover:text-primary transition-colors flex items-center gap-1">
+                  <X className="w-3 h-3" />
                   Limpar
                 </button>
               )}
             </div>
 
-            {/* Task category */}
-            <div className="border border-border bg-card py-1">
-              <div className="px-3 py-2 font-mono text-[9px] uppercase tracking-widest text-xmuted border-b border-border">
-                Tipo de tarefa
+            <div className="space-y-6">
+              {/* Categoria */}
+              <div>
+                <h3 className="text-[11px] font-mono uppercase tracking-wider text-foreground mb-3 flex items-center gap-2">
+                  <Gavel className="w-3.5 h-3.5 text-primary" /> Categoria
+                </h3>
+                <ul className="space-y-1.5">
+                  {VERTICALS.map(v => {
+                    const isActive = selectedVertical === v.id;
+                    const count = counts[v.id] ?? 0;
+                    return (
+                      <li key={v.id}>
+                        <button
+                          onClick={() => setSelectedVertical(isActive ? null : v.id)}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all ${isActive ? "bg-primary/8 text-primary font-medium" : "text-muted hover:bg-card hover:text-foreground"}`}
+                        >
+                          <span className="text-xs">{v.name}</span>
+                          <span className={`ml-auto text-[10px] font-mono px-1.5 py-0.5 rounded-full ${isActive ? "bg-primary/15 text-primary" : "bg-card text-muted"}`}>
+                            {statsLoading ? "..." : count}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
-              {TASK_CATEGORIES.map((cat) => {
-                const isActive = selectedCategory === cat.id;
-                const categoryCount = catalogStats.taskCategoryCounts[cat.id] ?? 0;
-                return (
-                  <button
-                    key={cat.id}
-                    onClick={() => setSelectedCategory(isActive ? null : cat.id)}
-                    className={`w-full flex items-center justify-between px-3 py-2 font-mono text-xs transition-colors ${
-                      isActive
-                        ? "text-foreground bg-card-hover border-l-2 border-primary"
-                        : "text-muted hover:text-foreground hover:bg-card border-l-2 border-transparent"
-                    }`}
-                  >
-                    <span className="truncate">{cat.name}</span>
-                    <span className="text-[10px] text-xmuted tabular-nums">
-                      {statsLoading ? "…" : categoryCount}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
 
-            {/* Quality score */}
-            <div className="border border-border bg-card p-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-[9px] uppercase tracking-widest text-xmuted">Quality score mín.</span>
-                <span className="font-mono text-[10px] text-muted tabular-nums">{minQualityScore}</span>
+              <div className="section-divider-warm" />
+
+              {/* Tipo de Tarefa */}
+              <div>
+                <h3 className="text-[11px] font-mono uppercase tracking-wider text-foreground mb-3 flex items-center gap-2">
+                  <ClipboardList className="w-3.5 h-3.5 text-primary" /> Tipo de Tarefa
+                </h3>
+                <ul className="space-y-1.5">
+                  {TASK_CATEGORIES.map(cat => {
+                    const isActive = selectedCategory === cat.id;
+                    const count = catalogStats.taskCategoryCounts[cat.id] ?? 0;
+                    return (
+                      <li key={cat.id}>
+                        <button
+                          onClick={() => setSelectedCategory(isActive ? null : cat.id)}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all ${isActive ? "bg-primary/8 text-primary font-medium" : "text-muted hover:bg-card hover:text-foreground"}`}
+                        >
+                          <span className="text-xs truncate">{cat.name}</span>
+                          <span className={`ml-auto text-[10px] font-mono px-1.5 py-0.5 rounded-full ${isActive ? "bg-primary/15 text-primary" : "bg-card text-muted"}`}>
+                            {statsLoading ? "..." : count}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
-              <input
-                type="range"
-                className="w-full accent-red-600 h-[2px] bg-[#2a2a2e] rounded cursor-pointer"
-                min="0" max="95" step="5"
-                value={minQualityScore}
-                onChange={(e) => setMinQualityScore(parseInt(e.target.value, 10))}
-              />
-              <div className="flex justify-between font-mono text-[9px] text-xmuted">
-                <span>0</span><span>50</span><span>95</span>
+
+              <div className="section-divider-warm" />
+
+              {/* Quality Score */}
+              <div>
+                <h3 className="text-[11px] font-mono uppercase tracking-wider text-foreground mb-3 flex items-center gap-2">
+                  <Verified className="w-3.5 h-3.5 text-primary" /> Quality Score
+                </h3>
+                <ul className="space-y-1.5">
+                  {[{ label: "90%+", v: 90 }, { label: "80% - 89%", v: 80 }, { label: "70% - 79%", v: 70 }].map(opt => (
+                    <li key={opt.v}>
+                      <button
+                        onClick={() => setMinScore(minScore === opt.v ? 0 : opt.v)}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all ${minScore === opt.v ? "bg-primary/8 text-primary font-medium" : "text-muted hover:bg-card hover:text-foreground"}`}
+                      >
+                        <span className="text-xs">{opt.label}</span>
+                        {minScore === opt.v && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="section-divider-warm" />
+
+              {/* Compliance */}
+              <div>
+                <h3 className="text-[11px] font-mono uppercase tracking-wider text-foreground mb-3 flex items-center gap-2">
+                  <Shield className="w-3.5 h-3.5 text-primary" /> Compliance
+                </h3>
+                <ul className="space-y-1.5">
+                  {["Total", "Alto", "Moderado"].map(l => (
+                    <li key={l}>
+                      <button
+                        onClick={() => setMinCompliance(minCompliance === l ? null : l)}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all ${minCompliance === l ? "bg-primary/8 text-primary font-medium" : "text-muted hover:bg-card hover:text-foreground"}`}
+                      >
+                        <span className="text-xs">{l}</span>
+                        {minCompliance === l && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
-
-            {/* CTA */}
           </div>
-        </div>
+        </aside>
 
-        {/* ---------- RESULTS ---------- */}
-        <div className="space-y-4 min-w-0">
+        {/* CONTENT */}
+        <section className="flex-1 min-w-0">
+          {/* Toolbar */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground font-serif">Todas as Skills</h2>
+              <p className="text-sm text-muted mt-0.5">
+                Mostrando <span className="font-semibold text-foreground">{isLoading ? "..." : totalCount}</span> resultados
+              </p>
+            </div>
+            <div className="flex items-center gap-3 bg-white px-4 py-2.5 rounded-xl border border-border/50 shadow-sm">
+              <span className="text-[10px] font-mono text-muted whitespace-nowrap">Ordenar por:</span>
+              <select value={sortBy} onChange={e => setSortBy(e.target.value as SortOption)}
+                className="bg-transparent border-none text-xs font-mono text-foreground focus:ring-0 p-0 pr-8 cursor-pointer appearance-none">
+                {SORT_OPTIONS.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+              </select>
+            </div>
+          </div>
 
-          {/* Active filter chips */}
-          {activeFilterCount > 0 && (
-            <div className="flex flex-wrap items-center gap-2">
-              {searchInput && <FilterChip label={`"${searchInput}"`} onRemove={() => setSearchInput("")} />}
+          {/* Filter chips */}
+          {activeFilters > 0 && (
+            <div className="flex flex-wrap items-center gap-2 mb-6">
+              {searchInput && (
+                <span className="inline-flex items-center gap-1.5 border border-primary/20 bg-primary/5 text-primary text-[10px] font-mono px-3 py-1.5 rounded-full">
+                  "{searchInput}" <button onClick={() => setSearchInput("")} className="hover:text-foreground"><X className="w-3 h-3" /></button>
+                </span>
+              )}
               {selectedVertical && (
-                <FilterChip
-                  label={VERTICALS.find((v) => v.id === selectedVertical)?.name ?? selectedVertical}
-                  onRemove={() => setSelectedVertical(null)}
-                />
+                <span className="inline-flex items-center gap-1.5 border border-primary/20 bg-primary/5 text-primary text-[10px] font-mono px-3 py-1.5 rounded-full">
+                  {VERTICALS.find(v => v.id === selectedVertical)?.name} <button onClick={() => setSelectedVertical(null)} className="hover:text-foreground"><X className="w-3 h-3" /></button>
+                </span>
               )}
               {selectedCategory && (
-                <FilterChip
-                  label={TASK_CATEGORIES.find((c) => c.id === selectedCategory)?.name ?? selectedCategory}
-                  onRemove={() => setSelectedCategory(null)}
-                />
+                <span className="inline-flex items-center gap-1.5 border border-primary/20 bg-primary/5 text-primary text-[10px] font-mono px-3 py-1.5 rounded-full">
+                  {TASK_CATEGORIES.find(c => c.id === selectedCategory)?.name} <button onClick={() => setSelectedCategory(null)} className="hover:text-foreground"><X className="w-3 h-3" /></button>
+                </span>
               )}
-              {minQualityScore > 0 && <FilterChip label={`Score ≥ ${minQualityScore}`} onRemove={() => setMinQualityScore(0)} />}
+              {minScore > 0 && (
+                <span className="inline-flex items-center gap-1.5 border border-primary/20 bg-primary/5 text-primary text-[10px] font-mono px-3 py-1.5 rounded-full">
+                  Score &ge; {minScore}% <button onClick={() => setMinScore(0)} className="hover:text-foreground"><X className="w-3 h-3" /></button>
+                </span>
+              )}
+              <button onClick={clearFilters} className="text-[10px] font-mono text-accent hover:text-primary transition-colors ml-1">Limpar todos</button>
             </div>
           )}
 
-          {/* Toolbar */}
-          <div className="flex items-center justify-between gap-4 flex-wrap border-b border-border pb-3">
-            <div className="flex items-center gap-1">
-              {SORT_TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setSortBy(tab.id)}
-                  className={`px-3 py-1.5 font-mono text-[10px] uppercase tracking-wide transition-colors ${
-                    sortBy === tab.id
-                      ? "text-foreground bg-card-hover border border-border"
-                      : "text-muted hover:text-foreground"
-                  }`}
-                >
-                  {tab.label}
-                </button>
+          {/* Loading */}
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="bg-white p-6 rounded-2xl border border-border h-[220px] space-y-4">
+                  <div className="h-4 w-1/3 rounded skeleton-shimmer" />
+                  <div className="h-6 w-3/4 rounded skeleton-shimmer" />
+                  <div className="h-4 w-full rounded skeleton-shimmer" />
+                  <div className="h-4 w-5/6 rounded skeleton-shimmer" />
+                  <div className="flex gap-2 mt-auto">
+                    <div className="h-3 w-16 rounded skeleton-shimmer" />
+                    <div className="h-3 w-16 rounded skeleton-shimmer" />
+                  </div>
+                </div>
               ))}
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-mono text-xmuted tabular-nums">
-                {isLoading ? "…" : `${totalCount} skill${totalCount !== 1 ? "s" : ""}`}
-              </span>
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary-dim text-foreground text-[10px] font-mono uppercase tracking-wide transition-colors"
-              >
-                <Plus className="w-3 h-3" />
-                Nova Skill
-              </button>
-              <div className="flex border border-border">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={`p-1.5 transition-colors ${viewMode === "grid" ? "bg-card-hover text-foreground" : "text-xmuted hover:text-muted"}`}
-                  title="Grade"
-                >
-                  <Grid className="w-3 h-3" />
-                </button>
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`p-1.5 transition-colors ${viewMode === "list" ? "bg-card-hover text-foreground" : "text-xmuted hover:text-muted"}`}
-                  title="Lista"
-                >
-                  <List className="w-3 h-3" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Result states */}
-          {isLoading ? (
-            <SkillGridSkeleton viewMode={viewMode} />
           ) : error ? (
-            <ErrorState message={error} onRetry={retry} />
+            <div className="border border-red-200 bg-red-50 p-10 text-center space-y-3 rounded-2xl">
+              <AlertTriangle className="w-8 h-8 text-red-400 mx-auto" />
+              <h4 className="text-lg font-semibold text-foreground font-serif">Erro ao carregar</h4>
+              <p className="text-sm text-muted">{error}</p>
+              <button onClick={retry} className="px-6 py-2.5 bg-primary text-white rounded-xl text-[11px] font-mono uppercase tracking-wide hover:bg-primary-dim transition-all">
+                Tentar novamente
+              </button>
+            </div>
           ) : items.length === 0 ? (
-            activeFilterCount > 0 ? (
-              <EmptyFilteredState onClear={handleClearFilters} />
-            ) : (
-              <EmptyCatalogState onCreate={() => setShowCreateModal(true)} />
-            )
+            <div className="border border-border p-16 text-center space-y-3 rounded-2xl bg-white">
+              <Inbox className="w-12 h-12 text-muted mx-auto" />
+              <h4 className="text-lg font-semibold text-foreground font-serif">Nenhuma skill encontrada</h4>
+              <p className="text-sm text-muted">
+                {activeFilters > 0 ? "Ajuste os filtros para ampliar os resultados." : "Nenhuma skill disponível no momento."}
+              </p>
+              {activeFilters > 0 && (
+                <button onClick={clearFilters} className="px-6 py-2.5 bg-primary text-white rounded-xl text-[11px] font-mono uppercase tracking-wide hover:bg-primary-dim transition-all">
+                  Limpar filtros
+                </button>
+              )}
+            </div>
           ) : (
             <>
-              {viewMode === "grid" ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[1px] bg-border">
-                  {featuredSkill && (
-                    <SkillCard skill={featuredSkill} onSelect={onSelectSkill} featured />
-                  )}
-                  {remainingItems.map((skill) => (
-                    <React.Fragment key={skill.id}>
-                      <SkillCard skill={skill} onSelect={onSelectSkill} />
-                    </React.Fragment>
-                  ))}
-                </div>
-              ) : (
-                <div className="divide-y divide-[#1a1a1e] border border-border">
-                  {items.map((skill) => (
-                    <React.Fragment key={skill.id}>
-                      <SkillCard skill={skill} onSelect={onSelectSkill} />
-                    </React.Fragment>
-                  ))}
-                </div>
-              )}
-
-              {/* Infinite scroll sentinel */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {items.map(skill => <React.Fragment key={skill.id}><SkillCard skill={skill} onSelect={onSelectSkill} /></React.Fragment>)}
+              </div>
               <div ref={sentinelRef} className="h-px" aria-hidden />
-
               {isLoadingMore && (
-                <div className="flex items-center justify-center gap-2 py-6 text-xs font-mono text-xmuted">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Carregando…
+                <div className="flex items-center justify-center gap-2 py-8">
+                  <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                  <span className="text-[11px] font-mono text-muted">Carregando mais skills...</span>
                 </div>
               )}
-
               {!hasMore && items.length > 0 && (
-                <p className="text-center text-[10px] font-mono text-xmuted uppercase tracking-widest py-6">
-                  {items.length} de {totalCount} skills
-                </p>
+                <div className="mt-12 flex flex-col sm:flex-row justify-between items-center gap-6">
+                  <span className="text-sm text-muted">
+                    Exibindo <span className="font-semibold text-foreground">{items.length}</span> de{" "}
+                    <span className="font-semibold text-foreground">{totalCount}</span> skills
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} disabled={currentPage === 1}
+                      className="page-btn w-10 h-10 flex items-center justify-center rounded-xl border border-border/40 text-muted hover:bg-white disabled:opacity-30">
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map(p => (
+                      <button key={p} onClick={() => setCurrentPage(p)}
+                        className={`page-btn w-10 h-10 flex items-center justify-center rounded-xl text-[11px] font-mono transition-all ${currentPage === p ? "active" : "border border-border/40 text-muted hover:bg-white"}`}>
+                        {p}
+                      </button>
+                    ))}
+                    {totalPages > 5 && <span className="text-muted text-[11px] font-mono px-1">...</span>}
+                    <button onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages}
+                      className="page-btn w-10 h-10 flex items-center justify-center rounded-xl border border-border/40 text-muted hover:bg-white disabled:opacity-30">
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
               )}
             </>
           )}
-        </div>
-      </div>
+        </section>
+      </main>
 
-      {/* ============================================================ */}
-      {/* CTA BANNER                                                    */}
-      {/* ============================================================ */}
-      
-              {/* ============================================================ */}
-      {/* FAQ                                                           */}
-      {/* ============================================================ */}
-      <div className="border-t border-border">
-        <div className="max-w-3xl mx-auto px-4 py-16">
-          <div className="flex items-center gap-2 mb-1">
-            <HelpCircle className="w-4 h-4 text-xmuted" />
-            <span className="font-mono text-[10px] uppercase tracking-widest text-xmuted">Perguntas Frequentes</span>
+      {/* ======================== FAQ ======================== */}
+      <div className="section-divider-warm" />
+      <section className="paper-texture paper-reciclato py-section-gap px-margin-desktop">
+        <div ref={faqRef} className="max-w-3xl mx-auto">
+          <div className={`text-center mb-14 transition-all duration-700 transform ${faqInView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}>
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <HelpCircle className="w-5 h-5 text-accent" />
+              <span className="text-[10px] font-mono uppercase tracking-widest text-muted">Perguntas Frequentes</span>
+            </div>
+            <h2 className="text-2xl font-bold text-foreground font-serif">Manual Sanfran.md</h2>
+            <p className="text-sm text-muted mt-2">Perguntas frequentes sobre nosso catálogo de skills</p>
           </div>
-          <h2 className="text-2xl font-bold text-foreground mb-10">Manual Sanfran.md</h2>
-
-          <div className="divide-y divide-[#1a1a1e]">
+          <div className="space-y-4">
             {FAQS.map((faq, idx) => {
-              const isOpen = activeFaq === idx;
+              const open = activeFaq === idx;
               return (
-                <div key={idx}>
-                  <button
-                    onClick={() => toggleFaq(idx)}
-                    className="w-full flex items-center justify-between gap-4 py-4 text-left group"
+                <details
+                  key={idx}
+                  className={`faq-accordion-smooth reveal ${faqInView ? "is-visible" : ""} group bg-white rounded-2xl border border-border/30 cursor-pointer transition-all hover:shadow-sm`}
+                  style={{ ["--reveal-delay" as string]: `${idx * 80}ms` } as React.CSSProperties}
+                  open={open}
+                >
+                  <summary
+                    onClick={(e) => { e.preventDefault(); toggleFaq(idx); }}
+                    className="flex justify-between items-center list-none text-base font-semibold text-foreground outline-none font-serif p-7"
                   >
-                    <span className={`text-sm font-medium transition-colors ${isOpen ? "text-foreground" : "text-foreground group-hover:text-foreground"}`}>
-                      {faq.question}
-                    </span>
-                    <ChevronDown className={`w-4 h-4 text-muted shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180 text-primary" : ""}`} />
-                  </button>
-                  {isOpen && (
-                    <p className="pb-5 text-sm text-muted leading-relaxed font-light pl-0 border-l-0">
-                      {faq.answer}
-                    </p>
-                  )}
-                </div>
+                    {faq.question}
+                    <ChevronDown className={`faq-icon w-5 h-5 text-accent shrink-0 transition-transform duration-300 ${open ? "rotate-180" : ""}`} />
+                  </summary>
+                  <div className="px-7 pb-7 text-sm text-muted leading-relaxed border-t border-border/30 mx-7 pt-5">
+                    {faq.answer}
+                  </div>
+                </details>
               );
             })}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Create Skill Modal with optimistic updates */}
-      <CreateSkillModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onSkillCreated={handleOptimisticCreate}
-        currentUserId={user?.id ?? ""}
-      />
-
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
-
-function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 border border-border bg-card text-muted text-[11px] font-mono px-2.5 py-1">
-      {label}
-      <button onClick={onRemove} aria-label={`Remover filtro ${label}`} className="hover:text-foreground transition-colors">
-        <X className="w-2.5 h-2.5" />
-      </button>
-    </span>
-  );
-}
-
-function SkillGridSkeleton({ viewMode }: { viewMode: "grid" | "list" }) {
-  const count = viewMode === "grid" ? 6 : 4;
-  const className = viewMode === "grid"
-    ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-card-hover"
-    : "divide-y divide-[#1a1a1e] border border-border";
-  return (
-    <div className={className}>
-      {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="bg-card p-4 h-[200px] animate-pulse space-y-3">
-          <div className="h-2 w-1/4 bg-card-hover rounded" />
-          <div className="h-4 w-3/4 bg-card-hover rounded" />
-          <div className="h-3 w-full bg-card-hover rounded" />
-          <div className="h-3 w-5/6 bg-card-hover rounded" />
-          <div className="mt-4 space-y-2">
-            <div className="h-1 w-full bg-card-hover rounded" />
-            <div className="h-1 w-full bg-card-hover rounded" />
+      {/* ======================== FOOTER ======================== */}
+      <footer className="w-full py-section-gap px-margin-desktop bg-[#37322F] text-[#F4F1EE]">
+        <div className="max-w-[1280px] mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex flex-col items-center md:items-start gap-3">
+            <span className="text-lg font-bold tracking-tight font-serif">Sanfran.md</span>
+            <p className="text-[11px] font-mono text-white/40">&copy; 2024 Sanfran.md &mdash; Inteligência Jurídica Brasileira.</p>
           </div>
+          <nav className="flex flex-wrap justify-center gap-x-10 gap-y-4">
+            {["Termos de Uso", "Privacidade", "Contato", "Sobre"].map(l => (
+              <a key={l} className="text-[11px] font-mono text-white/40 hover:text-white transition-colors" href="#">{l}</a>
+            ))}
+          </nav>
         </div>
-      ))}
-    </div>
-  );
-}
+      </footer>
 
-function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="border border-[#2a1a1a] bg-[#100d0d] p-10 text-center space-y-3">
-      <AlertTriangle className="w-8 h-8 text-red-700 mx-auto" />
-      <h4 className="text-sm font-semibold text-slate-200">Erro ao carregar</h4>
-      <p className="text-xs text-muted max-w-sm mx-auto">{message}</p>
-      <button onClick={onRetry} className="inline-flex items-center gap-2 border border-border bg-card text-xs font-mono text-foreground px-4 py-2 hover:text-foreground transition-colors">
-        <RefreshCw className="w-3 h-3" /> Tentar novamente
-      </button>
-    </div>
-  );
-}
-
-function EmptyFilteredState({ onClear }: { onClear: () => void }) {
-  return (
-    <div className="border border-border p-10 text-center space-y-3">
-      <X className="w-8 h-8 text-xmuted mx-auto" />
-      <h4 className="text-sm font-semibold text-foreground">Nenhuma skill encontrada</h4>
-      <p className="text-xs text-xmuted max-w-sm mx-auto">
-        Ajuste o score mínimo ou remova algum filtro para ampliar os resultados.
-      </p>
-      <button onClick={onClear} className="inline-flex items-center gap-2 border border-border bg-card text-xs font-mono text-muted px-4 py-2 hover:text-foreground transition-colors">
-        Limpar filtros
-      </button>
-    </div>
-  );
-}
-
-function EmptyCatalogState({ onCreate }: { onCreate: () => void }) {
-  return (
-    <div className="border border-border p-10 text-center space-y-3">
-      <Inbox className="w-8 h-8 text-xmuted mx-auto" />
-      <h4 className="text-sm font-semibold text-foreground">Catálogo vazio</h4>
-      <p className="text-xs text-xmuted max-w-sm mx-auto">
-        Seja o primeiro a publicar uma skill jurídica.
-      </p>
-      <button onClick={onCreate} className="inline-flex items-center gap-2 border border-border bg-card text-xs font-mono text-muted px-4 py-2 hover:text-foreground transition-colors">
-        Criar Skill
-      </button>
+      <CreateSkillModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} onSkillCreated={handleCreate} currentUserId={user?.id ?? ""} />
     </div>
   );
 }

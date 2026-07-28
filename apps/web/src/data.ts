@@ -70,10 +70,41 @@ export const FAQS: FaqItem[] = [
   }
 ];
 
-// Mock skills (example data)
+// ============================================================
+// MOCK SKILLS — 8 skills jurídicas para fallback + testes
+// ============================================================
+const BASE_MARKDOWN = `## 1. Goal
+Fornecer análise jurídica especializada para a área correspondente, seguindo a legislação brasileira vigente e jurisprudência dos tribunais superiores.
+
+## 2. Context & Core Norms
+* **Legislação aplicável**: Códigos e leis federais conforme a área de atuação.
+* **Jurisprudência**: Súmulas do STF, STJ e TST quando aplicáveis.
+* **Limites de atuação**: A IA deve alertar quando o caso exigir análise humana especializada.
+
+## 3. Execution Levels
+### Level 1: Standard Case
+1. Identificar a área jurídica e a legislação aplicável.
+2. Analisar os fatos à luz da legislação vigente.
+3. Fornecer orientação fundamentada com artigos de lei.
+
+### Level 2: Exceptional Handling
+1. **Casos complexos**: Quando houver divergência jurisprudencial, apresentar ambos os entendimentos.
+2. **Limites de escopo**: Alertar quando o caso exigir análise de advogado.
+
+### Level 3: Hard Boundaries
+1. **Proibido**: Oferecer garantia de resultado ou substituir advogado constituído.
+2. **Proibido**: Ignorar prazos processuais ou requisitos formais.`;
+
+const BASE_SECURITY_CRITERIA = [
+  { id: "sec-1", description: "LGPD - Proteção de dados pessoais", category: "Privacidade", severity: "high" as const },
+  { id: "sec-2", description: "Sigilo profissional advogado-cliente", category: "Ética", severity: "high" as const },
+  { id: "sec-3", description: "Vieses algorítmicos em recomendações jurídicas", category: "Ética", severity: "medium" as const },
+];
+
 export const MOCK_SKILLS: LegalSkill[] = [
   {
     id: "validador-peticao-cdc",
+    slug: "validador-peticao-cdc",
     name: "Validador de Petição Inicial Consumidora (Art. 319 CPC & CDC)",
     ownerName: "xi-de-agosto",
     ownerAvatar: "⚖️",
@@ -84,48 +115,205 @@ export const MOCK_SKILLS: LegalSkill[] = [
     reviewCount: 34,
     starsCount: 1850,
     version: "2.1.0",
-    updatedAt: "2026-06-02",
+    updatedAt: "2026-07-15",
     qualityScore: 94,
     regulatoryScore: 100,
     complianceChecked: true,
     regulatoryIssues: 0,
-    qualityBreakdown: {
-      precisaoNormativa: 10,
-      especificidade: 9,
-      padraoEntrega: 10,
-      limitesAutonomia: 9,
-      atualizacao: 9
-    },
-    markdownContent: `# Skill Jurídica: Validador de Petição Inicial Consumidora (CDC)
-## 1. Goal
-Validar petições iniciais de direito do consumidor antes do protocolo, garantindo preenchimento dos requisitos do Art. 319 do CPC e pedidos mandatórios de inversão do ônus da prova.
-
-## 2. Context & Core Norms
-* **Art. 319 do CPC**: Requisitos essenciais da petição (fatos, qualificação, valor da causa, pedidos).
-* **Art. 6º, VIII do CDC**: Direito básico do consumidor à facilitação de sua defesa, inclusive com inversão do ônus da prova.
-* **Art. 18 do CDC**: Prazo de 30 dias para saneamento de vício pelo fornecedor antes de exigir abatimento ou troca.
-
-## 3. Execution Levels
-### Level 1: Standard Case
-1. Verifica qualificação das partes, narrativa lógica dos fatos e o nexo causal de consumo.
-2. Certifica se os detalhes estruturais da peça contêm o valor exato pretendido da causa.
-3. Alerta caso falte o requerimento expresso do Art. 6º, VIII do CDC sobre inversão do ônus probatório.
-
-### Level 2: Exceptional Handling
-1. **Ausência de Reclamação Administrativa**: Se a petição reclama de vício de produto eletrônico mas não anexa prova de solicitação via administrativamente (consumidor.gov.br ou protocolo da assistência), o agente sinaliza risco de extinção por falta de interesse de agir e sugere redação preventiva de notificação.
-2. **Dano Moral Genérico**: Caso alegue 'dano moral' puramente sem demonstrar violação a direitos da personalidade, emite desaconselhamento e sugere nexo causal fático claro.
-
-### Level 3: Hard Boundaries & Grounding
-1. **Discussão de Danos Corporais Complexos**: Se o vício do produto causou lesões de saúde graves (fato do produto complexo), instrui o usuário a desabilitar respostas automáticas de IA e solicitar uma perícia médico-legal imediatamente.
-2. **Limite de Alocação**: Proibir recomendações de tutela de urgência sem verificação pragmática dos pressupostos do Art. 300 do CPC.
-
-## 4. Test Cases & Expected Formats
-### Input Text
-Exemplo de e‑mail ou rascunho de contestação ou inicial que queira auditar.
-
-### Output
-Lista de pendências jurídicas com as referências exatas do CDC e CPC correspondentes.`,
-    playgroundTestInput: "Entrei com ação contra fabricante do meu celular que quebrou após 2 meses. Pedi R$ 10.000,00 de danos morais de forma rápida e sumária. Não cheguei a procurar a fabricante porque estava muito irritado com o ocorrido.",
-    playgroundExpectedOutput: "Aviso: Há alto risco de extinção sem resolução do mérito por falta de interesse processual se o vício de produto for alegado judicialmente antes de oportunizar o prazo legal de 30 dias para a fabricante resolver o problema (Art. 18, §1º do CDC). Recomenda-se realizar reclamação administrativa prévia via consumidor.gov.br."
+    qualityBreakdown: { precisaoNormativa: 10, especificidade: 9, padraoEntrega: 10, limitesAutonomia: 9, atualizacao: 9 },
+    markdownContent: BASE_MARKDOWN,
+    objective: "Validar petições iniciais de direito do consumidor antes do protocolo.",
+    useCase: "Auditoria de petições iniciais consumidoras",
+    workflow: "Copy-paste da petição → análise automática → relatório de pendências",
+    professionalRole: "Advogado consumidorista",
+    securityCriteria: BASE_SECURITY_CRITERIA,
+  },
+  {
+    id: "analise-contrato-clt",
+    slug: "analise-contrato-clt",
+    name: "Análise de Contrato CLT",
+    ownerName: "garra-aberta",
+    ownerAvatar: "📋",
+    description: "Identificação de riscos contratuais e conformidade com a Reforma Trabalhista de 2017 e jurisprudência do TST.",
+    tags: ["Trabalhista", "Contratos", "CLT"],
+    vertical: "Trabalhista",
+    rating: 4.8,
+    reviewCount: 27,
+    starsCount: 1200,
+    version: "1.3.0",
+    updatedAt: "2026-07-10",
+    qualityScore: 98,
+    regulatoryScore: 95,
+    complianceChecked: true,
+    regulatoryIssues: 0,
+    qualityBreakdown: { precisaoNormativa: 10, especificidade: 10, padraoEntrega: 9, limitesAutonomia: 10, atualizacao: 9 },
+    markdownContent: BASE_MARKDOWN,
+    objective: "Analisar contratos CLT identificando cláusulas de risco.",
+    useCase: "Revisão de contratos trabalhistas",
+    workflow: "Upload do contrato → análise de cláusulas → relatório de riscos",
+    professionalRole: "Advogado trabalhista",
+    securityCriteria: BASE_SECURITY_CRITERIA,
+  },
+  {
+    id: "peticao-indenizacao",
+    slug: "peticao-indenizacao",
+    name: "Petição Inicial: Indenização",
+    ownerName: "sao-francisco",
+    ownerAvatar: "📝",
+    description: "Geração de exordial para ações de cobrança e danos morais baseada em fatos jurídicos fornecidos pelo usuário.",
+    tags: ["Cível", "Indenização", "Petição"],
+    vertical: "Processual",
+    rating: 4.7,
+    reviewCount: 42,
+    starsCount: 3400,
+    version: "3.0.0",
+    updatedAt: "2026-07-20",
+    qualityScore: 94,
+    regulatoryScore: 90,
+    complianceChecked: true,
+    regulatoryIssues: 1,
+    qualityBreakdown: { precisaoNormativa: 9, especificidade: 9, padraoEntrega: 10, limitesAutonomia: 9, atualizacao: 9 },
+    markdownContent: BASE_MARKDOWN,
+    objective: "Gerar petições iniciais de indenização completas.",
+    useCase: "Elaboração de ações indenizatórias",
+    workflow: "Fatos do cliente → estruturação jurídica → petição pronta",
+    professionalRole: "Advogado cível",
+    securityCriteria: BASE_SECURITY_CRITERIA,
+    playgroundTestInput: "Cliente sofreu acidente de trânsito com danos materiais de R$ 15.000 e morais.",
+    playgroundExpectedOutput: "Petição inicial completa com fundamentação no CC e CDC.",
+  },
+  {
+    id: "parecer-icms-st",
+    slug: "parecer-icms-st",
+    name: "Parecer ICMS-ST Interestadual",
+    ownerName: "tributa-facil",
+    ownerAvatar: "💰",
+    description: "Análise complexa de substituição tributária de ICMS para operações interestaduais com base no CONFAZ e jurisprudência do STF.",
+    tags: ["Tributário", "ICMS", "ST"],
+    vertical: "Societario",
+    rating: 4.9,
+    reviewCount: 18,
+    starsCount: 850,
+    version: "1.1.0",
+    updatedAt: "2026-07-05",
+    qualityScore: 99,
+    regulatoryScore: 98,
+    complianceChecked: true,
+    regulatoryIssues: 0,
+    qualityBreakdown: { precisaoNormativa: 10, especificidade: 10, padraoEntrega: 10, limitesAutonomia: 9, atualizacao: 10 },
+    markdownContent: BASE_MARKDOWN,
+    objective: "Emitir pareceres sobre ICMS-ST em operações interestaduais.",
+    useCase: "Consultoria tributária empresarial",
+    workflow: "Dados da operação → enquadramento legal → parecer completo",
+    professionalRole: "Advogado tributarista",
+    securityCriteria: BASE_SECURITY_CRITERIA,
+  },
+  {
+    id: "auditoria-due-diligence",
+    slug: "auditoria-due-diligence",
+    name: "Auditoria de Due Diligence",
+    ownerName: "corp-legal",
+    ownerAvatar: "🏢",
+    description: "Varredura automatizada de passivos ocultos em documentos societários e certidões para processos de M&A.",
+    tags: ["Empresarial", "Due Diligence", "M&A"],
+    vertical: "Societario",
+    rating: 4.8,
+    reviewCount: 31,
+    starsCount: 2100,
+    version: "2.2.0",
+    updatedAt: "2026-07-12",
+    qualityScore: 96,
+    regulatoryScore: 95,
+    complianceChecked: true,
+    regulatoryIssues: 0,
+    qualityBreakdown: { precisaoNormativa: 9, especificidade: 10, padraoEntrega: 10, limitesAutonomia: 9, atualizacao: 9 },
+    markdownContent: BASE_MARKDOWN,
+    objective: "Automatizar auditoria de documentos societários para Due Diligence.",
+    useCase: "Processos de fusão e aquisição",
+    workflow: "Upload de documentos → varredura de passivos → relatório executivo",
+    professionalRole: "Advogado empresarial",
+    securityCriteria: BASE_SECURITY_CRITERIA,
+  },
+  {
+    id: "calculo-rescisao",
+    slug: "calculo-rescisao",
+    name: "Cálculo de Rescisão Trabalhista",
+    ownerName: "trab-facil",
+    ownerAvatar: "🧮",
+    description: "Cálculo automatizado de verbas rescisórias incluindo aviso-prévio, multa do FGTS e férias proporcionais.",
+    tags: ["Trabalhista", "Rescisão", "Cálculo"],
+    vertical: "Trabalhista",
+    rating: 4.6,
+    reviewCount: 53,
+    starsCount: 4700,
+    version: "1.5.0",
+    updatedAt: "2026-06-28",
+    qualityScore: 91,
+    regulatoryScore: 88,
+    complianceChecked: true,
+    regulatoryIssues: 2,
+    qualityBreakdown: { precisaoNormativa: 9, especificidade: 9, padraoEntrega: 9, limitesAutonomia: 8, atualizacao: 9 },
+    markdownContent: BASE_MARKDOWN,
+    objective: "Calcular verbas rescisórias trabalhistas com precisão.",
+    useCase: "Cálculos de rescisão para RH e advogados",
+    workflow: "Dados do funcionário → cálculo automático → demonstrativo detalhado",
+    professionalRole: "Advogado trabalhista / RH",
+    securityCriteria: BASE_SECURITY_CRITERIA,
+    playgroundTestInput: "Salário R$ 3.500, data de admissão 01/01/2020, demissão sem justa causa em 30/06/2026.",
+    playgroundExpectedOutput: "Valor total da rescisão: R$ XX.XXX,XX com detalhamento de cada verba.",
+  },
+  {
+    id: "redator-contratos-sociais",
+    slug: "redator-contratos-sociais",
+    name: "Redator de Contratos Sociais",
+    ownerName: "societario-pro",
+    ownerAvatar: "📄",
+    description: "Estruturação de S/A e LTDA conforme DREI, com cláusulas padronizadas e compliance societário.",
+    tags: ["Empresarial", "Contratos", "Societário"],
+    vertical: "Societario",
+    rating: 4.7,
+    reviewCount: 22,
+    starsCount: 1800,
+    version: "1.0.0",
+    updatedAt: "2026-07-18",
+    qualityScore: 97,
+    regulatoryScore: 92,
+    complianceChecked: false,
+    regulatoryIssues: 3,
+    qualityBreakdown: { precisaoNormativa: 10, especificidade: 9, padraoEntrega: 10, limitesAutonomia: 9, atualizacao: 9 },
+    markdownContent: BASE_MARKDOWN,
+    objective: "Redigir contratos sociais e alterações conforme DREI.",
+    useCase: "Abertura e alteração de empresas",
+    workflow: "Dados da empresa → estruturação jurídica → contrato social pronto",
+    professionalRole: "Advogado societário",
+    securityCriteria: BASE_SECURITY_CRITERIA,
+  },
+  {
+    id: "politica-privacidade-lgpd",
+    slug: "politica-privacidade-lgpd",
+    name: "Política de Privacidade LGPD",
+    ownerName: "data-guard",
+    ownerAvatar: "🔒",
+    description: "Geração de políticas de privacidade e termos de uso em conformidade com a LGPD, adequadas ao porte e atividade da empresa.",
+    tags: ["LGPD", "Privacidade", "Compliance"],
+    vertical: "LGPD",
+    rating: 4.9,
+    reviewCount: 39,
+    starsCount: 3200,
+    version: "2.0.0",
+    updatedAt: "2026-07-22",
+    qualityScore: 95,
+    regulatoryScore: 98,
+    complianceChecked: true,
+    regulatoryIssues: 0,
+    qualityBreakdown: { precisaoNormativa: 10, especificidade: 9, padraoEntrega: 10, limitesAutonomia: 9, atualizacao: 10 },
+    markdownContent: BASE_MARKDOWN,
+    objective: "Gerar políticas de privacidade conforme LGPD.",
+    useCase: "Adequação de empresas à LGPD",
+    workflow: "Dados da empresa → geração da política → documentos prontos",
+    professionalRole: "DPO / Advogado LGPD",
+    securityCriteria: BASE_SECURITY_CRITERIA,
+    playgroundTestInput: "Empresa de e-commerce com 50 funcionários, coleta dados de clientes para vendas online.",
+    playgroundExpectedOutput: "Política de privacidade completa nos termos da LGPD.",
   },
 ];

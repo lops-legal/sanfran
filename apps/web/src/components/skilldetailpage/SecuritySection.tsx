@@ -15,21 +15,23 @@ const SEVERITY_ORDER: Severity[] = ["high", "medium", "low"];
 
 const SEVERITY_META: Record<
   Severity,
-  { label: string; color: string; bg: string; border: string; icon: LucideIcon }
+  { label: string; textColor: string; bg: string; border: string; barColor: string; icon: LucideIcon }
 > = {
-  high: { label: "Alto Risco", color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/30", icon: ShieldAlert },
+  high: { label: "Alto Risco", textColor: "text-red-700", bg: "bg-red-50", border: "border-red-200", barColor: "bg-red-400", icon: ShieldAlert },
   medium: {
     label: "Risco Médio",
-    color: "text-amber-400",
-    bg: "bg-amber-500/10",
-    border: "border-amber-500/30",
+    textColor: "text-amber-700",
+    bg: "bg-amber-50",
+    border: "border-amber-200",
+    barColor: "bg-amber-400",
     icon: ShieldQuestion,
   },
   low: {
     label: "Baixo Risco",
-    color: "text-emerald-400",
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/30",
+    textColor: "text-emerald-700",
+    bg: "bg-emerald-50",
+    border: "border-emerald-200",
+    barColor: "bg-emerald-400",
     icon: ShieldCheck,
   },
 };
@@ -55,7 +57,7 @@ export default function SecuritySection({ skill }: SecuritySectionProps) {
           return (
             <span
               key={sev}
-              className={`flex items-center gap-1.5 text-[10px] font-mono font-bold px-2.5 py-1 rounded border ${meta.bg} ${meta.border} ${meta.color}`}
+              className={`flex items-center gap-1.5 text-[10px] font-mono font-bold px-3 py-1.5 rounded-full border ${meta.bg} ${meta.border} ${meta.textColor}`}
             >
               <Icon className="w-3 h-3" />
               {count} {meta.label}
@@ -65,25 +67,26 @@ export default function SecuritySection({ skill }: SecuritySectionProps) {
       </div>
 
       {/* Grouped list */}
-      <div className="space-y-4">
+      <div className="space-y-5">
         {SEVERITY_ORDER.map((sev) => {
           const items = groups[sev];
           if (!items.length) return null;
           const meta = SEVERITY_META[sev];
           return (
             <div key={sev}>
-              <span className={`text-[10px] font-mono uppercase tracking-wider font-bold ${meta.color} block mb-2`}>
+              <span className={`text-[10px] font-mono uppercase tracking-wider font-bold ${meta.textColor} block mb-2.5`}>
                 {meta.label}
               </span>
               <div className="space-y-2">
                 {items.map((c) => (
                   <div
                     key={c.id}
-                    className="flex items-center justify-between gap-3 p-3 border border-[#1f1f24] bg-[#121214] hover:border-[#2b2b32] transition-colors rounded-md"
+                    className={`flex items-center justify-between gap-3 p-3.5 border rounded-xl bg-white hover:shadow-sm transition-all border-l-[3px] ${meta.border}`}
+                    style={{ borderLeftColor: meta.barColor.includes("red") ? "#f87171" : meta.barColor.includes("amber") ? "#fbbf24" : "#34d399" }}
                   >
-                    <span className="text-slate-300 font-mono text-xs leading-relaxed">{c.description}</span>
+                    <span className="text-foreground text-xs leading-relaxed">{c.description}</span>
                     <span
-                      className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded border shrink-0 ${meta.bg} ${meta.border} ${meta.color}`}
+                      className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border shrink-0 ${meta.bg} ${meta.border} ${meta.textColor}`}
                     >
                       {c.severity.toUpperCase()}
                     </span>
