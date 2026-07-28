@@ -15,7 +15,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 /** Cliente Supabase — usado apenas para escrita (upsert) no browser. Leituras passam pela API local. */
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = supabaseUrl && supabaseAnonKey
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : createClient("https://placeholder.supabase.co", "placeholder-anon-key");
 
 export interface CatalogStats {
   totalPublished: number;
