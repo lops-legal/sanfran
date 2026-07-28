@@ -106,7 +106,6 @@ function filterMockSkills(params: {
 // Stats mock
 const MOCK_STATS = {
   totalPublished: 42,
-  totalOabVerified: 28,
   totalDownloads: 12450,
   verticalCounts: {
     Trabalhista: 12,
@@ -262,7 +261,7 @@ skillsRouter.get("/catalog/stats", async (_req: Request, res: Response) => {
     await ensurePublishedSkills(client);
 
     const [catalogRes, verticalRes, taskRes, totalRes] = await Promise.all([
-      client.from("catalog_stats").select("total_published, total_oab_verified, total_downloads").maybeSingle(),
+      client.from("catalog_stats").select("total_published, total_downloads").maybeSingle(),
       client.from("vertical_stats").select("id, skill_count"),
       client.from("task_category_stats").select("id, skill_count"),
       client.from("skills").select("*", { count: "exact", head: true }).eq("is_published", true),
@@ -282,7 +281,6 @@ skillsRouter.get("/catalog/stats", async (_req: Request, res: Response) => {
 
     return res.json({
       totalPublished,
-      totalOabVerified: catalogRes.data?.total_oab_verified ?? 0,
       totalDownloads: catalogRes.data?.total_downloads ?? 0,
       verticalCounts,
       taskCategoryCounts,

@@ -13,7 +13,6 @@ import { useInView } from "../../hooks/useInView";
 import { Dock, DockIcon, DockItem, DockLabel } from "../ui/dock";
 import {
   ArrowLeft,
-  CheckCircle,
   Trash2,
   Edit,
   LayoutGrid,
@@ -108,12 +107,6 @@ export default function SkillDetailPage({ skill: initialSkill, onBack }: SkillDe
                   {skill.vertical}
                 </span>
                 <span className="text-[11px] text-muted font-mono">v{skill.version}</span>
-                {skill.complianceChecked && (
-                  <span className="pill-tag bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                    <CheckCircle className="w-3 h-3" />
-                    Auditoria OAB
-                  </span>
-                )}
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-serif max-w-3xl leading-tight mb-3">
                 {skill.name}

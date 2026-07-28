@@ -8,12 +8,12 @@ export function FinalCTASection() {
 
     return (
         <section className="py-24 md:py-32 bg-white relative overflow-hidden">
-             {/* Arch background reference */}
-             <div className="absolute inset-x-0 bottom-0 h-64 bg-[#F9F7F5] rounded-t-[100%] scale-150 pointer-events-none opacity-50" />
-             
+            {/* Arch background reference */}
+            <div className="absolute inset-x-0 bottom-0 h-64 bg-[#F9F7F5] rounded-t-[100%] scale-150 pointer-events-none opacity-50" />
+
             <div className="container max-w-3xl mx-auto px-4 relative z-10">
                 <div ref={ref} className={`scale-reveal ${inView ? "is-visible" : ""} text-center space-y-10`}>
-                    
+
                     <h2 className="text-3xl md:text-5xl font-bold leading-tight text-[#3E2B1E]">
                         Pronto para transformar seu fluxo de trabalho?
                     </h2>
@@ -26,7 +26,7 @@ export function FinalCTASection() {
                             <span className="relative z-10">Criar Conta Gratuita</span>
                         </button>
                         <a
-                            href="https://docs.sanfran.md"
+                            href="http://localhost:3000/docs"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="h-14 px-8 rounded-lg border-2 border-[#5D4432] text-[#5D4432] text-base font-medium hover:bg-[#F5F1EC] transition-all flex items-center justify-center w-full sm:w-auto"
@@ -36,18 +36,18 @@ export function FinalCTASection() {
                     </div>
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-10 border-t border-[#E0D8D0]/50 mt-10">
-                        <a 
-                            href="https://join.slack.com/t/sanfranmd/shared_invite/zt-44ys5kr75-li43f~B2o4TGQLsDwqc0rQ" 
-                            target="_blank" 
+                        <a
+                            href="https://join.slack.com/t/sanfranmd/shared_invite/zt-44ys5kr75-li43f~B2o4TGQLsDwqc0rQ"
+                            target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-2 text-sm text-[#8B7D6B] hover:text-[#5D4432] transition-colors"
                         >
                             <Slack className="w-4 h-4" />
                             Junte-se à nossa comunidade no Slack
                         </a>
-                        <a 
-                            href="https://chat.whatsapp.com/FDMNcZIGtow4UdU3esHKxz" 
-                            target="_blank" 
+                        <a
+                            href="https://chat.whatsapp.com/FDMNcZIGtow4UdU3esHKxz"
+                            target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-2 text-sm text-[#8B7D6B] hover:text-[#25D366] transition-colors"
                         >

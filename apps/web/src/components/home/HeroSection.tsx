@@ -48,7 +48,7 @@ export function HeroSection() {
                                 <ArrowRight className="w-5 h-5" />
                             </button>
                             <a
-                                href="https://docs.sanfran.md"
+                                href="https://sanfranmdskills.netlify.app/docs"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="h-14 px-8 rounded-lg border-2 border-[#5D4432] text-[#5D4432] text-base font-medium hover:bg-[#F5F1EC] transition-all flex items-center gap-2 w-full sm:w-auto justify-center"

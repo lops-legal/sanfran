@@ -39,7 +39,7 @@ export default function Navbar() {
             <div className="flex flex-1 items-center justify-center gap-2 text-center text-xs sm:text-sm">
               <span className="hidden sm:inline">Join the sanfran.md Slack community today!</span>
               <span className="sm:hidden">Join our Slack community!</span>
-              <a className="ml-2 rounded-full bg-[#FBFAF9]/20 px-3 py-1 text-xs font-medium transition-colors hover:bg-[#FBFAF9]/30" href="/slack">
+              <a className="ml-2 rounded-full bg-[#FBFAF9]/20 px-3 py-1 text-xs font-medium transition-colors hover:bg-[#FBFAF9]/30" href="https://sanfranmd.slack.com/join/shared_invite/zt-44ys5kr75-li43f~B2o4TGQLsDwqc0rQ#/shared-invite/email">
                 Join Slack
               </a>
             </div>
@@ -71,9 +71,8 @@ export default function Navbar() {
                 <Link
                   key={link.path}
                   to={link.path}
-                  className={`text-sm font-medium transition-colors ${
-                    isActive ? "text-foreground" : "text-muted hover:text-foreground"
-                  }`}
+                  className={`text-sm font-medium transition-colors ${isActive ? "text-foreground" : "text-muted hover:text-foreground"
+                    }`}
                 >
                   {link.label}
                 </Link>
@@ -83,7 +82,7 @@ export default function Navbar() {
 
           <div className="flex items-center gap-4">
 
-            
+
             {user ? (
               <div className="relative">
                 <button
@@ -107,7 +106,7 @@ export default function Navbar() {
                         {role === "admin" ? "Administrador" : "Usuário"}
                       </p>
                     </div>
-                    
+
                     {role === "admin" && (
                       <Link
                         to="/admin"
@@ -118,7 +117,7 @@ export default function Navbar() {
                         Painel Admin
                       </Link>
                     )}
-                    
+
                     <button
                       onClick={handleSignOut}
                       className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors text-left"
