@@ -105,7 +105,7 @@ export async function fetchSkillBySlug(slug: string): Promise<LegalSkill | null>
       throw new Error(payload.error ?? `Erro HTTP ${response.status}`);
     }
 
-    return response.json() as Promise<LegalSkill>;
+    return (await response.json()) as LegalSkill;
   } catch (err) {
     // Fallback: busca no mock
     const skill = MOCK_SKILLS.find((s) => s.slug === slug || s.id === slug);
@@ -122,7 +122,7 @@ export async function fetchCatalogStats(): Promise<CatalogStats> {
       throw new Error(payload.error ?? `Erro HTTP ${response.status}`);
     }
 
-    return response.json() as Promise<CatalogStats>;
+    return (await response.json()) as CatalogStats;
   } catch (err) {
     console.warn("[Sanfran] API stats não disponível, usando fallback:", err);
     return FALLBACK_STATS;
