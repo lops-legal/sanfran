@@ -19,10 +19,11 @@ import {
 } from 'framer-motion';
 import { cn } from '../../lib/utils';
 
-const DOCK_HEIGHT = 128;
-const DEFAULT_MAGNIFICATION = 80;
+const DOCK_HEIGHT = 64;
+const DEFAULT_MAGNIFICATION = 110;
 const DEFAULT_DISTANCE = 150;
-const DEFAULT_PANEL_HEIGHT = 64;
+const DEFAULT_PANEL_HEIGHT = 80;
+const BASE_ICON_WIDTH = 64;
 
 type DockProps = {
     children: React.ReactNode;
@@ -74,7 +75,7 @@ function useDock() {
 function Dock({
     children,
     className,
-    spring = { mass: 0.1, stiffness: 150, damping: 12 },
+    spring = { mass: 0.3, stiffness: 100, damping: 20 },
     magnification = DEFAULT_MAGNIFICATION,
     distance = DEFAULT_DISTANCE,
     panelHeight = DEFAULT_PANEL_HEIGHT,
@@ -137,7 +138,7 @@ function DockItem({ children, className, onClick }: DockItemProps) {
     const widthTransform = useTransform(
         mouseDistance,
         [-distance, 0, distance],
-        [40, magnification, 40]
+        [BASE_ICON_WIDTH, magnification, BASE_ICON_WIDTH]
     );
 
     const width = useSpring(widthTransform, spring);
@@ -186,7 +187,7 @@ function DockLabel({ children, className, ...rest }: DockLabelProps) {
                     initial={{ opacity: 0, y: 0 }}
                     animate={{ opacity: 1, y: -10 }}
                     exit={{ opacity: 0, y: 0 }}
-                    transition={{ duration: 0.2 }}
+                    transition={{ duration: 0.1 }}
                     className={cn(
                         'absolute -top-6 left-1/2 w-fit whitespace-pre rounded-md border border-gray-200 bg-gray-100 px-2 py-0.5 text-xs text-neutral-700 dark:border-neutral-900 dark:bg-neutral-800 dark:text-white',
                         className

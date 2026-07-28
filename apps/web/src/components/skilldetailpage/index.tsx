@@ -21,7 +21,6 @@ import {
   ShieldCheck,
   Plug,
   ChevronRight,
-  BookOpen,
   Download,
   Star,
 } from "lucide-react";
@@ -239,21 +238,6 @@ export default function SkillDetailPage({ skill: initialSkill, onBack }: SkillDe
                   <IntegrationSection />
                 </section>
               )}
-            </div>
-
-            {/* Methodology note — always visible */}
-            <div className="bg-accent/5 border border-accent/15 p-5 flex items-start gap-3 rounded-xl">
-              <div className="w-9 h-9 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
-                <BookOpen className="w-4 h-4 text-accent" />
-              </div>
-              <div>
-                <strong className="block text-sm font-semibold text-foreground mb-1 font-serif">Metodologia Sanfran.md</strong>
-                <p className="text-xs text-muted leading-relaxed">
-                  Este diretório de diretrizes de skill jurídica brasileira segue as regras recomendadas de compliance da
-                  Faculdade de Direito do Largo de São Francisco e as orientações vigentes de ética em advocacia digital
-                  da OAB 2026.
-                </p>
-              </div>
             </div>
           </div>
 
