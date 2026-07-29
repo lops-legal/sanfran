@@ -26,7 +26,7 @@ export function FinalCTASection() {
                             <span className="relative z-10">Criar Conta Gratuita</span>
                         </button>
                         <a
-                            href="http://localhost:3000/docs"
+                            href="https://sanfranmdskills.netlify.app/docs"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="h-14 px-8 rounded-lg border-2 border-[#5D4432] text-[#5D4432] text-base font-medium hover:bg-[#F5F1EC] transition-all flex items-center justify-center w-full sm:w-auto"

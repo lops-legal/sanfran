@@ -246,23 +246,6 @@ details>summary::-webkit-details-marker {
   display: none;
 }
 
-/* ─── Tab content transition (skill detail) ─── */
-.tab-content-enter {
-  animation: tabFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes tabFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 /* Filter checkbox custom */
 .filter-checkbox:checked {
   accent-color: var(--cafe-primary);
@@ -332,13 +315,8 @@ details>summary::-webkit-details-marker {
 
 /* ─── Shimmer skeleton ─── */
 @keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-
-  100% {
-    background-position: 200% 0;
-  }
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 .skeleton-shimmer {
@@ -382,9 +360,7 @@ details>summary::-webkit-details-marker {
 
 /* ─── Score ring animation ─── */
 @keyframes scoreRingFill {
-  from {
-    stroke-dashoffset: 100;
-  }
+  from { stroke-dashoffset: 100; }
 }
 
 .score-ring-animated circle.fill {
@@ -415,20 +391,13 @@ details>summary::-webkit-details-marker {
   transition: all 0.3s ease;
 }
 
-.faq-accordion-smooth[open] summary~div {
+.faq-accordion-smooth[open] summary ~ div {
   animation: faqOpen 0.3s ease forwards;
 }
 
 @keyframes faqOpen {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ─── Filter section collapse ─── */
@@ -511,7 +480,7 @@ details>summary::-webkit-details-marker {
     padding-left: 16px;
     padding-right: 16px;
   }
-
+  
   .py-section-gap {
     padding-top: 48px;
     padding-bottom: 48px;

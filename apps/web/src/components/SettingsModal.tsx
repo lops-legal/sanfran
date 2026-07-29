@@ -119,7 +119,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     />
                   </div>
                   <div className="col-span-2">
-                    <label className="text-[11px] font-mono text-slate-400 uppercase tracking-wider block mb-1.5">Número OAB</label>
+                    <label className="text-[11px] font-mono text-slate-400 uppercase tracking-wider block mb-1.5"></label>
                     <input
                       defaultValue="SP 123.456"
                       className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-[13px] text-slate-200 outline-none focus:border-orange-500/50 transition-colors font-sans"
