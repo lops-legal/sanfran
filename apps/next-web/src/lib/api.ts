@@ -1,5 +1,6 @@
 import { LegalSkill } from "./types";
 import { mapDbSkillToLegalSkill } from "./skillMapper";
+import { MOCK_SKILLS } from "./data";
 
 export interface CatalogStats {
   totalPublished: number;
@@ -60,34 +61,40 @@ function buildSkillsUrl(params: SkillQueryParams): string {
 }
 
 export async function fetchSkills(params: SkillQueryParams = {}): Promise<SkillQueryResult> {
-  try {
-    const res = await fetch(buildSkillsUrl(params), { next: { revalidate: 60 } });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.json() as Promise<SkillQueryResult>;
-  } catch {
-    return { skills: [], nextCursor: null, total: 0 };
+  let filtered = [...MOCK_SKILLS];
+  
+  if (params.search) {
+    const q = params.search.toLowerCase();
+    filtered = filtered.filter(s => s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q));
   }
+  if (params.vertical) {
+    filtered = filtered.filter(s => s.vertical === params.vertical);
+  }
+  if ((params.minQualityScore ?? 0) > 0) {
+    filtered = filtered.filter(s => s.qualityScore >= params.minQualityScore!);
+  }
+  
+  if (params.sortBy === "score") {
+    filtered.sort((a, b) => b.qualityScore - a.qualityScore);
+  } else if (params.sortBy === "recent") {
+    filtered.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  } else {
+    filtered.sort((a, b) => b.starsCount - a.starsCount);
+  }
+  
+  const pageSize = params.pageSize || 12;
+  const cursor = params.cursor || 0;
+  
+  const skills = filtered.slice(cursor, cursor + pageSize);
+  const nextCursor = cursor + pageSize < filtered.length ? cursor + pageSize : null;
+  
+  return { skills, nextCursor, total: filtered.length };
 }
 
 export async function fetchSkillBySlug(slug: string): Promise<LegalSkill | null> {
-  try {
-    const res = await fetch(`${API_BASE}/api/skills/${encodeURIComponent(slug)}`, {
-      next: { revalidate: 300 },
-    });
-    if (res.status === 404) return null;
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.json() as Promise<LegalSkill>;
-  } catch {
-    return null;
-  }
+  return MOCK_SKILLS.find(s => s.slug === slug) || null;
 }
 
 export async function fetchCatalogStats(): Promise<CatalogStats> {
-  try {
-    const res = await fetch(`${API_BASE}/api/catalog/stats`, { next: { revalidate: 300 } });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.json() as Promise<CatalogStats>;
-  } catch {
-    return FALLBACK_STATS;
-  }
+  return FALLBACK_STATS;
 }
