@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { SkillDataAdapter, SkillQueryParams, SkillQueryResult } from "../components/useInfiniteSkills";
 import { createMockAdapter } from "../components/useInfiniteSkills";
 import { LegalSkill } from "../types";
-import { mapDbSkillToLegalSkill } from "./skillMapper";
+import { mapDbSkillToLegalSkill, toDbPayload } from "./skillMapper";
 import { MOCK_SKILLS } from "../data";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
@@ -95,9 +95,9 @@ export const createSupabaseAdapter = (): SkillDataAdapter => {
   };
 };
 
-export async function fetchSkillBySlug(slug: string): Promise<LegalSkill | null> {
+export async function fetchSkillBySlug(slug: string, signal?: AbortSignal): Promise<LegalSkill | null> {
   try {
-    const response = await fetch(`/api/skills/${encodeURIComponent(slug)}`);
+    const response = await fetch(`/api/skills/${encodeURIComponent(slug)}`, { signal });
 
     if (response.status === 404) return null;
     if (!response.ok) {
@@ -134,7 +134,7 @@ export const upsertSkill = async (
 ): Promise<LegalSkill | null> => {
   const { data, error } = await supabase
     .from("skills")
-    .upsert(skill, { onConflict: "slug" })
+    .upsert(toDbPayload(skill), { onConflict: "slug" })
     .select(DETAIL_COLUMNS)
     .single();
 

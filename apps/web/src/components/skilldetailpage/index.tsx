@@ -170,22 +170,23 @@ export default function SkillDetailPage({ skill: initialSkill, onBack }: SkillDe
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
           {/* LEFT: Nav tabs + active section */}
-          <div className="lg:col-span-5 space-y-6">
+          <div className="lg:col-span-5 space-y-6 order-2 lg:order-1">
             {/* Tab navigation — Apple-style Dock */}
             <Dock className="items-end pb-3 bg-card/90 border border-border shadow-md">
               {SECTIONS.map(({ id, label, icon: Icon }) => {
                 const isActive = activeSection === id;
                 return (
-                  <DockItem
-                    key={id}
-                    onClick={() => setActiveSection(id)}
-                    className={`aspect-square rounded-full ${isActive ? "bg-primary/15 ring-2 ring-primary/30" : "bg-card-hover"}`}
-                  >
-                    <DockLabel>{label}</DockLabel>
-                    <DockIcon>
-                      <Icon className={`w-5 h-5 ${isActive ? "text-primary" : "text-muted"}`} />
-                    </DockIcon>
-                  </DockItem>
+                  <React.Fragment key={id}>
+                    <DockItem
+                      onClick={() => setActiveSection(id)}
+                      className={`aspect-square rounded-full ${isActive ? "bg-primary/15 ring-2 ring-primary/30" : "bg-card-hover"}`}
+                    >
+                      <DockLabel>{label}</DockLabel>
+                      <DockIcon>
+                        <Icon className={`w-5 h-5 ${isActive ? "text-primary" : "text-muted"}`} />
+                      </DockIcon>
+                    </DockItem>
+                  </React.Fragment>
                 );
               })}
             </Dock>
@@ -234,8 +235,8 @@ export default function SkillDetailPage({ skill: initialSkill, onBack }: SkillDe
             </div>
           </div>
 
-          {/* RIGHT: SKILL.md */}
-          <div className="lg:col-span-7 lg:sticky lg:top-[72px] self-start">
+          {/* RIGHT: SKILL.md — first on mobile */}
+          <div className="lg:col-span-7 lg:sticky lg:top-[72px] self-start order-1 lg:order-2">
             <SkillMarkdownCard skill={skill} loading={loadingDetails} />
           </div>
         </div>

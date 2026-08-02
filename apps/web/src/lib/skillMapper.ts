@@ -37,7 +37,8 @@ export function mapDbSkillToLegalSkill(row: DbSkillRow): LegalSkill {
     markdownContent: str(row.markdown_body ?? row.markdownContent),
     rating: num(row.rating),
     reviewCount: num(row.review_count),
-    starsCount: num(row.stars_count ?? row.downloads_count),
+    starsCount: num(row.stars_count),
+    downloadsCount: num(row.downloads_count ?? row.stars_count),
     tags: stringArray(row.tags),
     vertical: str(row.vertical, "Processual"),
     qualityScore: num(row.quality_score),
@@ -61,4 +62,28 @@ export function mapDbSkillToLegalSkill(row: DbSkillRow): LegalSkill {
 
 export function mapDbSkillsToLegalSkills(rows: DbSkillRow[] | null | undefined): LegalSkill[] {
   return (rows ?? []).map(mapDbSkillToLegalSkill);
+}
+
+/** Maps domain LegalSkill fields to Supabase column names for writes. */
+export function toDbPayload(
+  skill: Partial<LegalSkill> & { author_id: string; slug: string }
+): Record<string, unknown> {
+  return {
+    slug: skill.slug,
+    name: skill.name,
+    description: skill.description,
+    markdown_body: skill.markdownContent,
+    version: skill.version ?? "1.0.0",
+    author_id: skill.author_id,
+    owner_avatar: skill.ownerAvatar ?? "⚖️",
+    vertical: skill.vertical,
+    tags: skill.tags ?? [],
+    quality_score: skill.qualityScore ?? 80,
+    regulatory_score: skill.regulatoryScore ?? 80,
+    compliance_checked: skill.complianceChecked ?? false,
+    stars_count: skill.starsCount ?? 0,
+    downloads_count: skill.downloadsCount ?? skill.starsCount ?? 0,
+    review_count: skill.reviewCount ?? 0,
+    rating: skill.rating ?? 0,
+  };
 }

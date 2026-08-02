@@ -5,6 +5,8 @@ import { fetchSkillBySlug } from "../lib/supabaseAdapter";
 import { LegalSkill } from "../types";
 import { Loader2 } from "lucide-react";
 
+const FETCH_TIMEOUT_MS = 15_000;
+
 function SkillDetailRoute() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -20,10 +22,13 @@ function SkillDetailRoute() {
     }
 
     let cancelled = false;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
     setLoading(true);
     setError(null);
 
-    fetchSkillBySlug(slug)
+    fetchSkillBySlug(slug, controller.signal)
       .then((result) => {
         if (cancelled) return;
         if (!result) {
@@ -35,15 +40,22 @@ function SkillDetailRoute() {
       })
       .catch((err) => {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : "Erro ao carregar skill.");
+        if (err instanceof DOMException && err.name === "AbortError") {
+          setError("A requisição demorou demais. Tente novamente.");
+        } else {
+          setError("Não foi possível carregar esta skill. Tente novamente.");
+        }
         setSkill(null);
       })
       .finally(() => {
+        clearTimeout(timeoutId);
         if (!cancelled) setLoading(false);
       });
 
     return () => {
       cancelled = true;
+      clearTimeout(timeoutId);
+      controller.abort();
     };
   }, [slug]);
 

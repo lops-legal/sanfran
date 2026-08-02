@@ -65,7 +65,15 @@ export function FeaturedSkillsSection() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 max-w-6xl mx-auto">
                     {FEATURED_SKILLS.map((skill, i) => (
-                        <SkillCard key={skill.title} {...skill} index={i} />
+                        <React.Fragment key={skill.title}>
+                            <SkillCard
+                                title={skill.title}
+                                category={skill.category}
+                                description={skill.description}
+                                icon={skill.icon}
+                                index={i}
+                            />
+                        </React.Fragment>
                     ))}
                 </div>
 

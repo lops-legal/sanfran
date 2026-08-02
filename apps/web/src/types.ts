@@ -9,6 +9,7 @@ export interface LegalSkill {
   rating: number; // e.g., 4.9
   reviewCount: number; // e.g., 18
   starsCount: number; // e.g., 1420
+  downloadsCount?: number;
   tags: string[]; // e.g., ["Contratos", "LGPD", "CDC"]
   vertical: string; // e.g., "Trabalhista", "LGPD", "Tributário", "Consumidor", "Regulatório"
   qualityScore: number; // 0-100 - Quality Score

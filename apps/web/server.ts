@@ -3,9 +3,12 @@ import cron from "node-cron";
 import { requireRole } from "./middleware/rbac";
 import { skillsRouter } from "./server/skillsRoutes";
 import path from "path";
+import { fileURLToPath } from "url";
+import { Readable } from "stream";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
-import http from "http";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 dotenv.config();
 
@@ -35,8 +38,6 @@ app.delete("/api/account/delete", requireRole(["user", "admin"]), (req, res) => 
 app.post("/api/lex-chat", async (req, res) => {
   try {
     const backendUrl = process.env.LEX_BACKEND_URL || "http://localhost:8000/api/lex-chat";
-    const fetchModule = await import("node-fetch");
-    const fetch = fetchModule.default as any;
     const backendRes = await fetch(backendUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -49,24 +50,30 @@ app.post("/api/lex-chat", async (req, res) => {
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
-    backendRes.body.pipe(res);
+    if (!backendRes.body) {
+      return res.status(502).json({ error: "Backend retornou corpo vazio." });
+    }
+    Readable.fromWeb(backendRes.body as import("stream/web").ReadableStream).pipe(res);
   } catch (error: any) {
     console.error("Error proxying to FastAPI:", error);
     res.status(502).json({ error: "Backend FastAPI indisponível.", details: error.message });
   }
 });
 
-/* Scheduled retention job – runs daily at midnight */
-cron.schedule('0 0 * * *', () => {
-  const { execSync } = require('child_process');
-  try {
-    console.log('Running retention job (daily)...');
-    execSync('bash ../scripts/retention_job.sh', { stdio: 'inherit' });
-    console.log('Retention job completed.');
-  } catch (err) {
-    console.error('Retention job failed', err);
-  }
-});
+/* Scheduled retention job – runs daily at midnight (Linux/macOS only) */
+if (process.env.ENABLE_RETENTION_CRON === "true") {
+  cron.schedule("0 0 * * *", () => {
+    const { execSync } = require("child_process");
+    const scriptPath = path.resolve(__dirname, "../../scripts/retention_job.sh");
+    try {
+      console.log("Running retention job (daily)...");
+      execSync(`bash "${scriptPath}"`, { stdio: "inherit" });
+      console.log("Retention job completed.");
+    } catch (err) {
+      console.error("Retention job failed", err);
+    }
+  });
+}
 
 // Vite middleware development setup or static serving in production
 async function startServer() {

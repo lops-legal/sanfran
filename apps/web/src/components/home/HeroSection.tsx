@@ -16,7 +16,7 @@ export function HeroSection() {
 
     return (
         <section className="paper-texture paper-seda relative min-h-[80vh] flex items-center overflow-hidden bg-[#F9F7F5]">
-            <div className="container max-w-7xl mx-auto px-4 py-20">
+            <div className="container max-w-7xl mx-auto px-4 py-10 md:py-20">
                 <div ref={revealRef} className="max-w-4xl mx-auto text-center space-y-10">
 
                     <div className={`transition-all duration-1000 transform ${inView ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"}`}>

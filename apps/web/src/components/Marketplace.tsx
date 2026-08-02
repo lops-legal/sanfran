@@ -151,7 +151,7 @@ export default function Marketplace({ onSelectSkill }: MarketplaceProps) {
         name: s.name,
         desc: s.description,
         vertical: s.vertical,
-        downloads: s.starsCount,
+        downloads: s.downloadsCount ?? s.starsCount,
         score: s.qualityScore,
         compliance: s.complianceChecked ? "Total" : s.regulatoryScore >= 80 ? "Alto" : "Moderado",
         trending: i === 0,
@@ -222,7 +222,13 @@ export default function Marketplace({ onSelectSkill }: MarketplaceProps) {
             ))}
             <div className="hidden sm:block w-px h-6 bg-border mx-2" />
             <button
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => {
+                if (!user?.id) {
+                  toast.warning("Login necessário", "Entre na sua conta para publicar uma skill.");
+                  return;
+                }
+                setShowCreateModal(true);
+              }}
               className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-mono font-medium rounded-full bg-accent text-white hover:bg-accent-hover transition-all hover:-translate-y-0.5 shadow-sm"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -603,7 +609,14 @@ export default function Marketplace({ onSelectSkill }: MarketplaceProps) {
         </div>
       </footer>
 
-      <CreateSkillModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} onSkillCreated={handleCreate} currentUserId={user?.id ?? ""} />
+      {user?.id && (
+        <CreateSkillModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSkillCreated={handleCreate}
+          currentUserId={user.id}
+        />
+      )}
     </div>
   );
 }

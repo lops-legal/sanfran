@@ -61,7 +61,14 @@ export function HowItWorksSection() {
                         />
                     </div>
                     {STEPS.map((step, i) => (
-                        <StepCard key={step.title} icon={step.icon} title={step.title} desc={step.desc} index={i} />
+                        <React.Fragment key={step.title}>
+                            <StepCard
+                                icon={step.icon}
+                                title={step.title}
+                                desc={step.desc}
+                                index={i}
+                            />
+                        </React.Fragment>
                     ))}
                 </div>
             </div>

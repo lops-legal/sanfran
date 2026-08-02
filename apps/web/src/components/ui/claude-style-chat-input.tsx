@@ -100,12 +100,14 @@ const FilePreviewCard: React.FC<FilePreviewCardProps> = ({ file, onRemove }) => 
 };
 
 interface PastedContentCardProps {
-    content: {
-        id: string;
-        content: string;
-        timestamp: Date;
-    };
+    content: PastedSnippet;
     onRemove: (id: string) => void;
+}
+
+interface PastedSnippet {
+    id: string;
+    content: string;
+    timestamp: Date;
 }
 
 const PastedContentCard: React.FC<PastedContentCardProps> = ({ content, onRemove }) => {
@@ -229,7 +231,7 @@ export interface ClaudeChatInputProps {
 export default function ClaudeChatInput({ onSendMessage, isLoading }: ClaudeChatInputProps) {
     const [message, setMessage] = useState("");
     const [files, setFiles] = useState<AttachedFile[]>([]);
-    const [pastedContent, setPastedContent] = useState<AttachedFile[]>([]);
+    const [pastedContent, setPastedContent] = useState<PastedSnippet[]>([]);
     const [isDragging, setIsDragging] = useState(false);
     const [selectedModel, setSelectedModel] = useState("standard");
     const [isThinkingEnabled, setIsThinkingEnabled] = useState(false);
@@ -296,7 +298,7 @@ export default function ClaudeChatInput({ onSendMessage, isLoading }: ClaudeChat
         const text = e.clipboardData.getData('text');
         if (text.length > 300) {
             e.preventDefault();
-            const snippet = {
+            const snippet: PastedSnippet = {
                 id: Math.random().toString(36).substr(2, 9),
                 content: text,
                 timestamp: new Date()

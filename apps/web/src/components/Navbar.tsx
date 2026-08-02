@@ -21,8 +21,8 @@ export default function Navbar() {
 
   const navLinks = [
     { label: "Skills", path: "/skills" },
-    { label: "Integrate", path: "/integrate" },
-    { label: "Docs", path: "/docs" },
+    { label: "Integrar", path: "/integrate" },
+    { label: "Documentação", path: "/docs" },
   ];
 
   const handleSignOut = async () => {
@@ -37,8 +37,8 @@ export default function Navbar() {
         <div className="w-full bg-gradient-to-r from-[#4A154B] to-[#611f69] text-[#FBFAF9]">
           <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-2">
             <div className="flex flex-1 items-center justify-center gap-2 text-center text-xs sm:text-sm">
-              <span className="hidden sm:inline">Join the sanfran.md Slack community today!</span>
-              <span className="sm:hidden">Join our Slack community!</span>
+              <span className="hidden sm:inline">Junte-se à comunidade Sanfran no Slack!</span>
+              <span className="sm:hidden">Comunidade no Slack</span>
               <a className="ml-2 rounded-full bg-[#FBFAF9]/20 px-3 py-1 text-xs font-medium transition-colors hover:bg-[#FBFAF9]/30" href="https://sanfranmd.slack.com/join/shared_invite/zt-44ys5kr75-li43f~B2o4TGQLsDwqc0rQ#/shared-invite/email">
                 Join Slack
               </a>

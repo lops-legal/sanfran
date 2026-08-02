@@ -66,9 +66,9 @@ function VerticalPill({ vertical }: { vertical: string }) {
 
 export default function SkillCard({ skill, onSelect, featured = false }: SkillCardProps) {
   const { ref, inView } = useInView<HTMLDivElement>({ threshold: 0.15 });
-  const downloadsLabel = skill.starsCount >= 1000
-    ? `${(skill.starsCount / 1000).toFixed(1)}k`
-    : String(skill.starsCount);
+  const downloadsLabel = (skill.downloadsCount ?? skill.starsCount) >= 1000
+    ? `${((skill.downloadsCount ?? skill.starsCount) / 1000).toFixed(1)}k`
+    : String(skill.downloadsCount ?? skill.starsCount);
 
   const recent = isRecent(skill);
   const iconElement = VERTICAL_ICON[skill.vertical] ?? <FileText className="w-5 h-5" />;
