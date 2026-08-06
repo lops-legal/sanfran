@@ -8,7 +8,7 @@ export function FinalCTASection() {
   const { ref, inView } = useInView<HTMLDivElement>({ threshold: 0.3 });
 
   return (
-    <section className="py-24 md:py-32 bg-white relative overflow-hidden">
+    <section className="py-14 md:py-24 lg:py-32 bg-white relative overflow-hidden">
       <div className="absolute inset-x-0 bottom-0 h-64 bg-[#F9F7F5] rounded-t-[100%] scale-150 pointer-events-none opacity-50" />
 
       <div className="container max-w-3xl mx-auto px-4 relative z-10">

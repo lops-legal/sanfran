@@ -75,16 +75,16 @@ export default function SkillDetailPage({ skill: initialSkill, onBack }: SkillDe
 
       {/* Breadcrumb + Hero */}
       <div className="paper-texture paper-seda" style={{ background: "linear-gradient(180deg, #fff8f5 0%, #F9F7F5 100%)" }}>
-        <div className="max-w-7xl mx-auto px-margin-desktop pt-[100px] pb-8">
-          <nav className="flex items-center gap-1.5 mb-6">
-            <button onClick={onBack} className="breadcrumb-link hover:text-primary flex items-center gap-1 transition-colors">
+        <div className="max-w-7xl mx-auto px-margin-desktop pt-20 md:pt-24 lg:pt-[100px] pb-8">
+          <nav className="flex items-center gap-1.5 mb-6 min-w-0">
+            <button onClick={onBack} className="breadcrumb-link hover:text-primary flex items-center gap-1 transition-colors shrink-0">
               <ArrowLeft className="w-3.5 h-3.5" />
               Catálogo
             </button>
-            <ChevronRight className="w-3 h-3 text-muted" />
-            <span className="text-[12px] font-mono text-muted">{skill.vertical}</span>
-            <ChevronRight className="w-3 h-3 text-muted" />
-            <span className="text-[12px] font-mono text-foreground font-medium truncate max-w-[200px]">{skill.name}</span>
+            <ChevronRight className="w-3 h-3 text-muted shrink-0" />
+            <span className="text-[12px] font-mono text-muted shrink-0">{skill.vertical}</span>
+            <ChevronRight className="w-3 h-3 text-muted shrink-0" />
+            <span className="text-[12px] font-mono text-foreground font-medium truncate max-w-[120px] sm:max-w-[200px]">{skill.name}</span>
           </nav>
 
           <div ref={heroRef} className="flex flex-col lg:flex-row items-start justify-between gap-8">
@@ -106,22 +106,20 @@ export default function SkillDetailPage({ skill: initialSkill, onBack }: SkillDe
               </p>
             </div>
 
-            <div className={`shrink-0 flex flex-col gap-4 transition-all duration-700 delay-200 transform ${heroInView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}>
-              <div className="flex items-center gap-6 bg-white border border-border rounded-xl p-4 shadow-sm">
-                <div className="text-center">
-                  <span className="text-[10px] font-mono text-muted uppercase tracking-wider block mb-1">Downloads</span>
-                  <span className="text-lg font-bold text-foreground font-mono">{downloadsLabel}</span>
+            <div className={`shrink-0 w-full lg:w-auto flex flex-col gap-4 transition-all duration-700 delay-200 transform ${heroInView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}>
+              <div className="grid grid-cols-3 gap-2 sm:gap-4 bg-white border border-border rounded-xl p-3 sm:p-4 shadow-sm">
+                <div className="text-center min-w-0">
+                  <span className="text-[9px] sm:text-[10px] font-mono text-muted uppercase tracking-wider block mb-1">Downloads</span>
+                  <span className="text-sm sm:text-lg font-bold text-foreground font-mono">{downloadsLabel}</span>
                 </div>
-                <div className="w-px h-10 bg-border" />
-                <div className="text-center">
-                  <span className="text-[10px] font-mono text-muted uppercase tracking-wider block mb-1">Score</span>
-                  <span className="text-lg font-bold text-foreground font-mono">{skill.qualityScore}%</span>
+                <div className="text-center min-w-0 border-x border-border px-1">
+                  <span className="text-[9px] sm:text-[10px] font-mono text-muted uppercase tracking-wider block mb-1">Score</span>
+                  <span className="text-sm sm:text-lg font-bold text-foreground font-mono">{skill.qualityScore}%</span>
                 </div>
-                <div className="w-px h-10 bg-border" />
-                <div className="text-center">
-                  <span className="text-[10px] font-mono text-muted uppercase tracking-wider block mb-1">Rating</span>
-                  <span className="text-lg font-bold text-foreground font-mono flex items-center gap-1">
-                    <Star className="w-4 h-4 fill-amber-400 stroke-amber-400" />
+                <div className="text-center min-w-0">
+                  <span className="text-[9px] sm:text-[10px] font-mono text-muted uppercase tracking-wider block mb-1">Rating</span>
+                  <span className="text-sm sm:text-lg font-bold text-foreground font-mono flex items-center justify-center gap-1">
+                    <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-amber-400 stroke-amber-400" />
                     {skill.rating.toFixed(1)}
                   </span>
                 </div>
@@ -157,7 +155,7 @@ export default function SkillDetailPage({ skill: initialSkill, onBack }: SkillDe
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
           {/* LEFT: Nav tabs + active section */}
-          <div className="lg:col-span-5 space-y-6">
+          <div className="lg:col-span-5 space-y-6 order-2 lg:order-1">
             {/* Tab navigation — Apple-style Dock */}
             <Dock className="items-end pb-3 bg-card/90 border border-border shadow-md">
               {SECTIONS.map(({ id, label, icon: Icon }) => {
@@ -221,8 +219,8 @@ export default function SkillDetailPage({ skill: initialSkill, onBack }: SkillDe
             </div>
           </div>
 
-          {/* RIGHT: SKILL.md */}
-          <div className="lg:col-span-7 lg:sticky lg:top-[72px] self-start">
+          {/* RIGHT: SKILL.md — first on mobile */}
+          <div className="lg:col-span-7 lg:sticky lg:top-[72px] self-start order-1 lg:order-2">
             <SkillMarkdownCard skill={skill} loading={loadingDetails} />
           </div>
         </div>

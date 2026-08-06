@@ -1,6 +1,7 @@
 import React from "react";
 import { HeroSection } from "../components/home/HeroSection";
 import { HowItWorksSection } from "../components/home/HowItWorksSection";
+import { HowToPlugSection } from "../components/home/HowToPlugSection";
 import { WhyUseSkillsSection } from "../components/home/WhyUseSkillsSection";
 import { FeaturedSkillsSection } from "../components/home/FeaturedSkillsSection";
 import { WhyUseOurMCPSection } from "../components/home/WhyUseOurMCPSection";
@@ -22,6 +23,9 @@ export default function Home() {
 
       <div className="section-divider" />
       <HowItWorksSection />
+
+      <div className="section-divider" />
+      <HowToPlugSection />
 
       <div className="section-divider" />
       <FeaturedSkillsSection />

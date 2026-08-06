@@ -15,19 +15,19 @@ export function HeroSection() {
     });
 
     return (
-        <section className="paper-texture paper-seda relative min-h-[80vh] flex items-center overflow-hidden bg-[#F9F7F5]">
+        <section className="paper-texture paper-seda relative min-h-0 md:min-h-[70vh] flex items-center overflow-hidden bg-[#F9F7F5]">
             <div className="container max-w-7xl mx-auto px-4 py-10 md:py-20">
-                <div ref={revealRef} className="max-w-4xl mx-auto text-center space-y-10">
+                <div ref={revealRef} className="max-w-4xl mx-auto text-center space-y-6 md:space-y-10">
 
                     <div className={`transition-all duration-1000 transform ${inView ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"}`}>
-                        <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold tracking-tight leading-[1.1] text-[#3E2B1E] mb-6">
-                            Sua IA não precisa mais<br />
-                            <span className="text-[#C9A84C]">se perder no direito.</span>
+                        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold tracking-tight leading-[1.1] text-[#3E2B1E] mb-6">
+                            Sanfran.md é o manual jurídico brasileiro<br />
+                            <span className="text-[#C9A84C]">do seu assistente de IA.</span>
                         </h1>
                     </div>
 
                     <p className={`text-lg md:text-xl text-[#8B7D6B] max-w-2xl mx-auto font-light leading-relaxed mb-6 transition-all duration-1000 delay-100 transform ${inView ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"}`}>
-                        Conecte o conhecimento da legislação brasileira diretamente ao seu assistente via MCP. Reduza alucinações e crie fluxos de trabalho jurídicos seguros.
+                        Conecte o contexto jurídico brasileiro diretamente ao seu assistente (Claude, Grok, GPT..) via MCP. Reduza as alucinações e crie fluxos de trabalho seguros. Use centenas de skills com um plug.
                     </p>
 
                     <div className={`flex justify-center mb-10 transition-all duration-1000 delay-200 transform ${inView ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"}`}>

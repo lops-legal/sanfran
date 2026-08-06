@@ -183,11 +183,11 @@ details>summary::-webkit-details-marker { display: none; }
 .page-btn:hover { background: var(--cafe-primary); color: white; border-color: var(--cafe-primary); }
 .page-btn.active { background: var(--cafe-primary); color: white; border-color: var(--cafe-primary); }
 
-/* Spacing utilities */
-.px-margin-desktop { padding-left: 64px; padding-right: 64px; }
+/* Spacing utilities — mobile-first (see MOBILE_UX_PLAN.md Q2) */
+.px-margin-desktop { padding-left: 24px; padding-right: 24px; }
 .py-stack-md { padding-top: 16px; padding-bottom: 16px; }
 .py-stack-lg { padding-top: 32px; padding-bottom: 32px; }
-.py-section-gap { padding-top: 80px; padding-bottom: 80px; }
+.py-section-gap { padding-top: 48px; padding-bottom: 48px; }
 .pb-stack-lg { padding-bottom: 32px; }
 .pb-section-gap { padding-bottom: 80px; }
 .gap-stack-lg { gap: 32px; }
@@ -432,10 +432,19 @@ details>summary::-webkit-details-marker { display: none; }
   max-width: 80%;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .px-margin-desktop { padding-left: 16px; padding-right: 16px; }
-  .py-section-gap { padding-top: 48px; padding-bottom: 48px; }
+/* Responsive spacing tokens */
+@media (min-width: 768px) {
+  .px-margin-desktop { padding-left: 32px; padding-right: 32px; }
+}
+
+@media (min-width: 1024px) {
+  .px-margin-desktop { padding-left: 48px; padding-right: 48px; }
+  .py-section-gap { padding-top: 80px; padding-bottom: 80px; }
+  .pb-section-gap { padding-bottom: 80px; }
+}
+
+@media (min-width: 1280px) {
+  .px-margin-desktop { padding-left: 64px; padding-right: 64px; }
 }
 
 /* Screen reader only */

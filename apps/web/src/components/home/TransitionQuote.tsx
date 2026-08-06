@@ -4,7 +4,7 @@ export function TransitionQuote() {
     const { ref, inView } = useInView<HTMLDivElement>({ threshold: 0.3 });
 
     return (
-        <section className="py-20 md:py-28 bg-[#F9F7F5]">
+        <section className="py-12 md:py-20 lg:py-28 bg-[#F9F7F5]">
             <div className="container max-w-3xl mx-auto px-4">
                 <div ref={ref} className={`scale-reveal ${inView ? "is-visible" : ""} text-center space-y-6`}>
                     

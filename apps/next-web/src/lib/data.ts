@@ -8,7 +8,7 @@ export const VERTICALS: VerticalCategory[] = [
     id: "Trabalhista",
     name: "Direito Trabalhista",
     icon: "Briefcase",
-    count: 24,
+    count: 2,
     description: "Análise de acordos de jornada, horas extras habituais, verbas rescisórias e terceirizações sob as regras da CLT e súmulas do TST.",
     accentClass: "border-red-500/50 hover:border-red-500 text-red-400"
   },
@@ -16,7 +16,7 @@ export const VERTICALS: VerticalCategory[] = [
     id: "LGPD",
     name: "Proteção de Dados & LGPD",
     icon: "ShieldAlert",
-    count: 18,
+    count: 3,
     description: "Conformidade de termos de uso, políticas de privacidade pactuadas, cláusulas de transferência internacional e canais de DPO.",
     accentClass: "border-emerald-500/50 hover:border-emerald-500 text-emerald-400"
   },
@@ -24,7 +24,7 @@ export const VERTICALS: VerticalCategory[] = [
     id: "Consumidor",
     name: "Direito do Consumidor",
     icon: "ShoppingBag",
-    count: 31,
+    count: 1,
     description: "Vício do produto, cobranças indevidas, venda casada e direito de arrependimento regulados pelo CDC.",
     accentClass: "border-amber-500/50 hover:border-amber-500 text-amber-400"
   },
@@ -32,7 +32,7 @@ export const VERTICALS: VerticalCategory[] = [
     id: "Societario",
     name: "Contratos & Societário",
     icon: "FileSignature",
-    count: 27,
+    count: 8,
     description: "Análise de multas penitenciárias, cláusula penal de fidelização, limitação de responsabilidade e acordos corporativos estritos.",
     accentClass: "border-blue-500/50 hover:border-blue-500 text-blue-400"
   },
@@ -40,7 +40,7 @@ export const VERTICALS: VerticalCategory[] = [
     id: "Processual",
     name: "Prática Processual Civ.",
     icon: "Scale",
-    count: 15,
+    count: 8,
     description: "Triagem de prazos recursais, pressupostos de admissibilidade, requisitos das petições iniciais (Art. 319 do CPC) e recursos.",
     accentClass: "border-purple-500/50 hover:border-purple-500 text-purple-400"
   }
@@ -48,11 +48,11 @@ export const VERTICALS: VerticalCategory[] = [
 
 // Task categories
 export const TASK_CATEGORIES: TaskCategory[] = [
-  { id: "auditoria", name: "Auditoria de Contratos", count: 42 },
-  { id: "peticao", name: "Redação de Peças", count: 28 },
-  { id: "compliance", name: "Checklists de Compliance", count: 35 },
-  { id: "notificacao", name: "Respostas a Notificações", count: 19 },
-  { id: "pesquisa", name: "Pareceres & Pesquisa", count: 22 }
+  { id: "auditoria", name: "Auditoria de Contratos", count: 5 },
+  { id: "peticao", name: "Redação de Peças", count: 4 },
+  { id: "compliance", name: "Checklists de Compliance", count: 5 },
+  { id: "notificacao", name: "Respostas a Notificações", count: 3 },
+  { id: "pesquisa", name: "Pareceres & Pesquisa", count: 5 }
 ];
 
 // Frequently asked questions

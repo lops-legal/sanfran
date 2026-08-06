@@ -2,12 +2,11 @@
 
 import React, { useState, useRef, useEffect, useMemo, useTransition, useCallback } from "react";
 import { LegalSkill } from "../lib/types";
-import { VERTICALS, TASK_CATEGORIES, FAQS } from "../lib/data";
 import SkillCard from "./SkillCard";
 import {
   Search, X, Loader2, AlertTriangle, Inbox, Plus,
   ChevronLeft, ChevronRight, ChevronDown,
-  Download, Shield, Verified, Gavel, HelpCircle, ClipboardList,
+  Download, Verified, Lock,
   Sparkles, TrendingUp,
 } from "lucide-react";
 import {
@@ -17,8 +16,10 @@ import {
 import { useCatalogStats } from "../hooks/useCatalogStats";
 import { useInView } from "../hooks/useInView";
 import CreateSkillModal from "./CreateSkillModal";
+import AuthModal from "./AuthModal";
 import { toast } from "./Toast";
 import { useAuth } from "../contexts/AuthContext";
+import { supabase } from "../lib/supabase";
 
 // Import cinematic styles for paper textures & reveals
 import "../styles/home-cinematic.css";
@@ -28,27 +29,21 @@ import "../styles/home-cinematic.css";
 // ---------------------------------------------------------------------------
 function readSearchParams() {
   if (typeof window === "undefined") {
-    return { q: "", vertical: null, category: null, score: 0, sort: "stars" as SortOption };
+    return { q: "", sort: "stars" as SortOption };
   }
   const p = new URLSearchParams(window.location.search);
   return {
     q: p.get("q") ?? "",
-    vertical: p.get("v") ?? null,
-    category: p.get("cat") ?? null,
-    score: parseInt(p.get("score") ?? "0", 10),
     sort: (p.get("sort") ?? "stars") as SortOption,
   };
 }
 
 function pushSearchParams(params: {
-  q: string; vertical: string | null; category: string | null; score: number; sort: SortOption;
+  q: string; sort: SortOption;
 }) {
   if (typeof window === "undefined") return;
   const p = new URLSearchParams();
   if (params.q) p.set("q", params.q);
-  if (params.vertical) p.set("v", params.vertical);
-  if (params.category) p.set("cat", params.category);
-  if (params.score > 0) p.set("score", String(params.score));
   if (params.sort !== "stars") p.set("sort", params.sort);
   const search = p.toString();
   window.history.replaceState(null, "", search ? `?${search}` : window.location.pathname);
@@ -85,15 +80,11 @@ export default function Marketplace({ onSelectSkill }: MarketplaceProps) {
   const { user } = useAuth();
 
   const [searchInput, setSearchInput] = useState(initial.q);
-  const [selectedVertical, setSelectedVertical] = useState<string | null>(initial.vertical);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(initial.category);
-  const [minScore, setMinScore] = useState<number>(initial.score);
-  const [minCompliance, setMinCompliance] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>(initial.sort);
-  const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [highlightIndex, setHighlightIndex] = useState(0);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const searchRef = useRef<HTMLInputElement>(null);
   const [, startTransition] = useTransition();
@@ -101,11 +92,10 @@ export default function Marketplace({ onSelectSkill }: MarketplaceProps) {
   // Scroll-reveal refs
   const { ref: heroRef, inView: heroInView } = useInView<HTMLDivElement>({ threshold: 0.1 });
   const { ref: highlightsRef, inView: highlightsInView } = useInView<HTMLDivElement>({ threshold: 0.15 });
-  const { ref: faqRef, inView: faqInView } = useInView<HTMLDivElement>({ threshold: 0.1 });
 
   useEffect(() => {
-    pushSearchParams({ q: searchInput, vertical: selectedVertical, category: selectedCategory, score: minScore, sort: sortBy });
-  }, [searchInput, selectedVertical, selectedCategory, minScore, sortBy]);
+    pushSearchParams({ q: searchInput, sort: sortBy });
+  }, [searchInput, sortBy]);
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -118,7 +108,7 @@ export default function Marketplace({ onSelectSkill }: MarketplaceProps) {
   }, []);
 
   const { items, totalCount, isLoading, isLoadingMore, error, hasMore, loadMore, retry, mutateItems } = useInfiniteSkills({
-    search: searchInput, vertical: selectedVertical, taskCategory: selectedCategory, minQualityScore: minScore, sortBy, pageSize: PAGE_SIZE,
+    search: searchInput, vertical: null, taskCategory: null, minQualityScore: 0, sortBy, pageSize: PAGE_SIZE,
   });
 
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -128,20 +118,29 @@ export default function Marketplace({ onSelectSkill }: MarketplaceProps) {
     toast.success("Skill publicada!", `"${s.name}" aparece no topo do catálogo.`);
   }, [mutateItems]);
 
-  const sentinelRef = useInfiniteScrollSentinel(loadMore, hasMore && !isLoading && !error);
+  // Não-logados veem apenas um preview de 10 skills; o restante exige login.
+  const isPreview = !user;
+  const PREVIEW_LIMIT = 10;
+  const visibleItems = isPreview ? items.slice(0, PREVIEW_LIMIT) : items;
 
-  const activeFilters = (selectedVertical ? 1 : 0) + (selectedCategory ? 1 : 0) + (minScore > 0 ? 1 : 0) + (searchInput ? 1 : 0) + (minCompliance ? 1 : 0);
+  const sentinelRef = useInfiniteScrollSentinel(loadMore, !isPreview && hasMore && !isLoading && !error);
+
+  const activeFilters = searchInput ? 1 : 0;
 
   const clearFilters = useCallback(() => {
-    startTransition(() => {
-      setSearchInput(""); setSelectedVertical(null); setSelectedCategory(null); setMinScore(0); setMinCompliance(null);
-    });
+    startTransition(() => { setSearchInput(""); });
   }, [startTransition]);
 
-  const counts = catalogStats.verticalCounts;
+  const handleGoogleSignIn = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin + window.location.pathname },
+    });
+    if (error) console.error("Erro ao conectar com Google:", error.message);
+  };
+
   const totalPub = catalogStats.totalPublished;
   const totalPages = Math.ceil(totalCount / PAGE_SIZE) || 1;
-  const toggleFaq = (i: number) => setActiveFaq(prev => prev === i ? null : i);
 
   // Derive highlights from loaded items (top 3 by quality score)
   const highlights = useMemo(() => {
@@ -177,7 +176,7 @@ export default function Marketplace({ onSelectSkill }: MarketplaceProps) {
     <div id="marketplace" className="bg-background text-foreground font-sans pb-section-gap">
 
       {/* ======================== HERO ======================== */}
-      <section className="paper-texture paper-seda relative pt-[140px] pb-20 px-margin-desktop border-b border-border overflow-hidden" style={{ background: "linear-gradient(180deg, #fff8f5 0%, #F9F7F5 100%)" }}>
+      <section className="paper-texture paper-seda relative pt-24 md:pt-32 lg:pt-[140px] pb-20 px-margin-desktop border-b border-border overflow-hidden" style={{ background: "linear-gradient(180deg, #fff8f5 0%, #F9F7F5 100%)" }}>
         <div ref={heroRef} className="max-w-4xl mx-auto text-center flex flex-col items-center relative z-10">
 
           {/* Badge */}
@@ -206,7 +205,7 @@ export default function Marketplace({ onSelectSkill }: MarketplaceProps) {
               onChange={e => startTransition(() => setSearchInput(e.target.value))}
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setSearchFocused(false)}
-              className={`w-full pl-16 pr-20 py-5 bg-white border-2 rounded-2xl shadow-lg focus:ring-4 focus:ring-primary/10 outline-none text-sm transition-all placeholder:text-muted ${searchFocused ? "border-primary/40 shadow-primary/10" : "border-border shadow-primary/5"}`}
+              className={`w-full pl-16 pr-20 py-4 md:py-5 bg-white border-2 rounded-2xl shadow-lg focus:ring-4 focus:ring-primary/10 outline-none text-sm transition-all placeholder:text-muted ${searchFocused ? "border-primary/40 shadow-primary/10" : "border-border shadow-primary/5"}`}
               placeholder="Busque por área jurídica ou tipo de tarefa..."
             />
             <div className="absolute inset-y-0 right-4 flex items-center">
@@ -214,16 +213,8 @@ export default function Marketplace({ onSelectSkill }: MarketplaceProps) {
             </div>
           </div>
 
-          {/* Category Chips + Create Button */}
+          {/* Create Button */}
           <div className={`flex flex-wrap justify-center items-center gap-2 transition-all duration-700 delay-[400ms] transform ${heroInView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}>
-            <span className="text-[11px] font-mono text-muted mr-1 self-center">Populares:</span>
-            <button onClick={() => setSelectedVertical(null)}
-              className={`category-chip ${!selectedVertical ? "active" : ""}`}>Todas</button>
-            {VERTICALS.slice(0, 4).map(v => (
-              <button key={v.id} onClick={() => setSelectedVertical(selectedVertical === v.id ? null : v.id)}
-                className={`category-chip ${selectedVertical === v.id ? "active" : ""}`}>{v.name}</button>
-            ))}
-            <div className="hidden sm:block w-px h-6 bg-border mx-2" />
             <button
               onClick={() => setShowCreateModal(true)}
               className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-mono font-medium rounded-full bg-accent text-white hover:bg-accent-hover transition-all hover:-translate-y-0.5 shadow-sm"
@@ -305,129 +296,11 @@ export default function Marketplace({ onSelectSkill }: MarketplaceProps) {
 
       <div className="section-divider-warm" />
 
-      {/* ================== MAIN: FILTERS + GRID ================== */}
-      <main className="max-w-[1280px] mx-auto px-margin-desktop flex flex-col lg:flex-row gap-stack-lg py-section-gap">
-
-        {/* SIDEBAR */}
-        <aside className="w-full lg:w-72 shrink-0">
-          <div className="sticky top-[100px] p-6 bg-white rounded-2xl border border-border/50 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-sm font-semibold text-foreground font-serif">Filtros</h2>
-                <p className="text-[10px] text-muted font-mono mt-0.5">Refine sua busca</p>
-              </div>
-              {activeFilters > 0 && (
-                <button onClick={clearFilters} className="text-[11px] font-mono text-accent hover:text-primary transition-colors flex items-center gap-1">
-                  <X className="w-3 h-3" />
-                  Limpar
-                </button>
-              )}
-            </div>
-
-            <div className="space-y-6">
-              {/* Categoria */}
-              <div>
-                <h3 className="text-[11px] font-mono uppercase tracking-wider text-foreground mb-3 flex items-center gap-2">
-                  <Gavel className="w-3.5 h-3.5 text-primary" /> Categoria
-                </h3>
-                <ul className="space-y-1.5">
-                  {VERTICALS.map(v => {
-                    const isActive = selectedVertical === v.id;
-                    const count = counts[v.id] ?? 0;
-                    return (
-                      <li key={v.id}>
-                        <button
-                          onClick={() => setSelectedVertical(isActive ? null : v.id)}
-                          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all ${isActive ? "bg-primary/8 text-primary font-medium" : "text-muted hover:bg-card hover:text-foreground"}`}
-                        >
-                          <span className="text-xs">{v.name}</span>
-                          <span className={`ml-auto text-[10px] font-mono px-1.5 py-0.5 rounded-full ${isActive ? "bg-primary/15 text-primary" : "bg-card text-muted"}`}>
-                            {statsLoading ? "..." : count}
-                          </span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-
-              <div className="section-divider-warm" />
-
-              {/* Tipo de Tarefa */}
-              <div>
-                <h3 className="text-[11px] font-mono uppercase tracking-wider text-foreground mb-3 flex items-center gap-2">
-                  <ClipboardList className="w-3.5 h-3.5 text-primary" /> Tipo de Tarefa
-                </h3>
-                <ul className="space-y-1.5">
-                  {TASK_CATEGORIES.map(cat => {
-                    const isActive = selectedCategory === cat.id;
-                    const count = catalogStats.taskCategoryCounts[cat.id] ?? 0;
-                    return (
-                      <li key={cat.id}>
-                        <button
-                          onClick={() => setSelectedCategory(isActive ? null : cat.id)}
-                          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all ${isActive ? "bg-primary/8 text-primary font-medium" : "text-muted hover:bg-card hover:text-foreground"}`}
-                        >
-                          <span className="text-xs truncate">{cat.name}</span>
-                          <span className={`ml-auto text-[10px] font-mono px-1.5 py-0.5 rounded-full ${isActive ? "bg-primary/15 text-primary" : "bg-card text-muted"}`}>
-                            {statsLoading ? "..." : count}
-                          </span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-
-              <div className="section-divider-warm" />
-
-              {/* Quality Score */}
-              <div>
-                <h3 className="text-[11px] font-mono uppercase tracking-wider text-foreground mb-3 flex items-center gap-2">
-                  <Verified className="w-3.5 h-3.5 text-primary" /> Quality Score
-                </h3>
-                <ul className="space-y-1.5">
-                  {[{ label: "90%+", v: 90 }, { label: "80% - 89%", v: 80 }, { label: "70% - 79%", v: 70 }].map(opt => (
-                    <li key={opt.v}>
-                      <button
-                        onClick={() => setMinScore(minScore === opt.v ? 0 : opt.v)}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all ${minScore === opt.v ? "bg-primary/8 text-primary font-medium" : "text-muted hover:bg-card hover:text-foreground"}`}
-                      >
-                        <span className="text-xs">{opt.label}</span>
-                        {minScore === opt.v && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="section-divider-warm" />
-
-              {/* Compliance */}
-              <div>
-                <h3 className="text-[11px] font-mono uppercase tracking-wider text-foreground mb-3 flex items-center gap-2">
-                  <Shield className="w-3.5 h-3.5 text-primary" /> Compliance
-                </h3>
-                <ul className="space-y-1.5">
-                  {["Total", "Alto", "Moderado"].map(l => (
-                    <li key={l}>
-                      <button
-                        onClick={() => setMinCompliance(minCompliance === l ? null : l)}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all ${minCompliance === l ? "bg-primary/8 text-primary font-medium" : "text-muted hover:bg-card hover:text-foreground"}`}
-                      >
-                        <span className="text-xs">{l}</span>
-                        {minCompliance === l && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        </aside>
+      {/* ================== MAIN: GRID ================== */}
+      <main className="max-w-[1280px] mx-auto px-margin-desktop py-section-gap">
 
         {/* CONTENT */}
-        <section className="flex-1 min-w-0">
+        <section>
           {/* Toolbar */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
             <div>
@@ -451,21 +324,6 @@ export default function Marketplace({ onSelectSkill }: MarketplaceProps) {
               {searchInput && (
                 <span className="inline-flex items-center gap-1.5 border border-primary/20 bg-primary/5 text-primary text-[10px] font-mono px-3 py-1.5 rounded-full">
                   "{searchInput}" <button onClick={() => setSearchInput("")} className="hover:text-foreground"><X className="w-3 h-3" /></button>
-                </span>
-              )}
-              {selectedVertical && (
-                <span className="inline-flex items-center gap-1.5 border border-primary/20 bg-primary/5 text-primary text-[10px] font-mono px-3 py-1.5 rounded-full">
-                  {VERTICALS.find(v => v.id === selectedVertical)?.name} <button onClick={() => setSelectedVertical(null)} className="hover:text-foreground"><X className="w-3 h-3" /></button>
-                </span>
-              )}
-              {selectedCategory && (
-                <span className="inline-flex items-center gap-1.5 border border-primary/20 bg-primary/5 text-primary text-[10px] font-mono px-3 py-1.5 rounded-full">
-                  {TASK_CATEGORIES.find(c => c.id === selectedCategory)?.name} <button onClick={() => setSelectedCategory(null)} className="hover:text-foreground"><X className="w-3 h-3" /></button>
-                </span>
-              )}
-              {minScore > 0 && (
-                <span className="inline-flex items-center gap-1.5 border border-primary/20 bg-primary/5 text-primary text-[10px] font-mono px-3 py-1.5 rounded-full">
-                  Score &ge; {minScore}% <button onClick={() => setMinScore(0)} className="hover:text-foreground"><X className="w-3 h-3" /></button>
                 </span>
               )}
               <button onClick={clearFilters} className="text-[10px] font-mono text-accent hover:text-primary transition-colors ml-1">Limpar todos</button>
@@ -513,8 +371,52 @@ export default function Marketplace({ onSelectSkill }: MarketplaceProps) {
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {items.map(skill => <React.Fragment key={skill.id}><SkillCard skill={skill} onSelect={onSelectSkill} /></React.Fragment>)}
+                {visibleItems.map(skill => <React.Fragment key={skill.id}><SkillCard skill={skill} onSelect={onSelectSkill} /></React.Fragment>)}
               </div>
+
+              {/* FOMO: não-logados veem mais cards por baixo de uma trava leve, como último componente */}
+              {isPreview && totalCount > PREVIEW_LIMIT && (
+                <div className="relative mt-5">
+                  {/* Cards seguintes (desfocados), sugerindo que há mais por vir */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pointer-events-none select-none blur-[3px] opacity-40"
+                    style={{ WebkitMaskImage: "linear-gradient(to bottom, rgba(0,0,0,0.6), transparent)", maskImage: "linear-gradient(to bottom, rgba(0,0,0,0.6), transparent)" }}>
+                    {items.slice(PREVIEW_LIMIT, PREVIEW_LIMIT + 6).map(skill => (
+                      <React.Fragment key={skill.id}><SkillCard skill={skill} onSelect={() => {}} /></React.Fragment>
+                    ))}
+                  </div>
+
+                  {/* Trava semi-transparente em cima dos cards */}
+                  <div className="absolute inset-0 flex items-center justify-center rounded-3xl bg-white/60 backdrop-blur-[2px] p-6">
+                    <div className="max-w-md w-full text-center">
+                      <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 text-primary mb-5">
+                        <Lock className="w-6 h-6" />
+                      </div>
+                      <h3 className="text-xl font-bold text-foreground font-serif mb-2">
+                        Você está vendo apenas {PREVIEW_LIMIT} de {totalCount} skills
+                      </h3>
+                      <p className="text-sm text-muted mb-6">
+                        Desbloqueie o catálogo completo, salve favoritos e acompanhe downloads.
+                      </p>
+                      <div className="flex flex-wrap items-center justify-center gap-3">
+                        <button
+                          onClick={handleGoogleSignIn}
+                          className="inline-flex items-center gap-2.5 h-11 px-6 rounded-full bg-white text-foreground border border-border text-sm font-medium shadow-sm hover:bg-muted/10 transition-colors"
+                        >
+                          <img src="/Google__G__logo.svg.webp" alt="Google" className="w-4 h-4" />
+                          Continuar com Google
+                        </button>
+                        <button
+                          onClick={() => setIsAuthModalOpen(true)}
+                          className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-primary text-white text-sm font-medium hover:bg-primary-dim transition-colors"
+                        >
+                          Criar conta com email
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div ref={sentinelRef} className="h-px" aria-hidden />
               {isLoadingMore && (
                 <div className="flex items-center justify-center gap-2 py-8">
@@ -525,9 +427,10 @@ export default function Marketplace({ onSelectSkill }: MarketplaceProps) {
               {!hasMore && items.length > 0 && (
                 <div className="mt-12 flex flex-col sm:flex-row justify-between items-center gap-6">
                   <span className="text-sm text-muted">
-                    Exibindo <span className="font-semibold text-foreground">{items.length}</span> de{" "}
+                    Exibindo <span className="font-semibold text-foreground">{visibleItems.length}</span> de{" "}
                     <span className="font-semibold text-foreground">{totalCount}</span> skills
                   </span>
+                  {!isPreview && (
                   <div className="flex items-center gap-2">
                     <button onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} disabled={currentPage === 1}
                       className="page-btn w-10 h-10 flex items-center justify-center rounded-xl border border-border/40 text-muted hover:bg-white disabled:opacity-30">
@@ -545,51 +448,13 @@ export default function Marketplace({ onSelectSkill }: MarketplaceProps) {
                       <ChevronRight className="w-5 h-5" />
                     </button>
                   </div>
+                  )}
                 </div>
               )}
             </>
           )}
         </section>
       </main>
-
-      {/* ======================== FAQ ======================== */}
-      <div className="section-divider-warm" />
-      <section className="paper-texture paper-reciclato py-section-gap px-margin-desktop">
-        <div ref={faqRef} className="max-w-3xl mx-auto">
-          <div className={`text-center mb-14 transition-all duration-700 transform ${faqInView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}>
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <HelpCircle className="w-5 h-5 text-accent" />
-              <span className="text-[10px] font-mono uppercase tracking-widest text-muted">Perguntas Frequentes</span>
-            </div>
-            <h2 className="text-2xl font-bold text-foreground font-serif">Manual Sanfran.md</h2>
-            <p className="text-sm text-muted mt-2">Perguntas frequentes sobre nosso catálogo de skills</p>
-          </div>
-          <div className="space-y-4">
-            {FAQS.map((faq, idx) => {
-              const open = activeFaq === idx;
-              return (
-                <details
-                  key={idx}
-                  className={`faq-accordion-smooth reveal ${faqInView ? "is-visible" : ""} group bg-white rounded-2xl border border-border/30 cursor-pointer transition-all hover:shadow-sm`}
-                  style={{ ["--reveal-delay" as string]: `${idx * 80}ms` } as React.CSSProperties}
-                  open={open}
-                >
-                  <summary
-                    onClick={(e) => { e.preventDefault(); toggleFaq(idx); }}
-                    className="flex justify-between items-center list-none text-base font-semibold text-foreground outline-none font-serif p-7"
-                  >
-                    {faq.question}
-                    <ChevronDown className={`faq-icon w-5 h-5 text-accent shrink-0 transition-transform duration-300 ${open ? "rotate-180" : ""}`} />
-                  </summary>
-                  <div className="px-7 pb-7 text-sm text-muted leading-relaxed border-t border-border/30 mx-7 pt-5">
-                    {faq.answer}
-                  </div>
-                </details>
-              );
-            })}
-          </div>
-        </div>
-      </section>
 
       {/* ======================== FOOTER ======================== */}
       <footer className="w-full py-section-gap px-margin-desktop bg-[#37322F] text-[#F4F1EE]">
@@ -607,6 +472,7 @@ export default function Marketplace({ onSelectSkill }: MarketplaceProps) {
       </footer>
 
       <CreateSkillModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} onSkillCreated={handleCreate} currentUserId={user?.id ?? ""} />
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </div>
   );
 }

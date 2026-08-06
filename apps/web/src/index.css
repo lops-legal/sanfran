@@ -268,10 +268,10 @@ details>summary::-webkit-details-marker {
   border-color: var(--cafe-primary);
 }
 
-/* Spacing utilities */
+/* Spacing utilities — mobile-first (see MOBILE_UX_PLAN.md Q2) */
 .px-margin-desktop {
-  padding-left: 64px;
-  padding-right: 64px;
+  padding-left: 24px;
+  padding-right: 24px;
 }
 
 .py-stack-md {
@@ -285,8 +285,8 @@ details>summary::-webkit-details-marker {
 }
 
 .py-section-gap {
-  padding-top: 80px;
-  padding-bottom: 80px;
+  padding-top: 48px;
+  padding-bottom: 48px;
 }
 
 .pb-stack-lg {
@@ -474,15 +474,33 @@ details>summary::-webkit-details-marker {
   font-weight: 600;
 }
 
-/* ─── Responsive marketplace ─── */
-@media (max-width: 768px) {
+/* ─── Responsive spacing tokens ─── */
+@media (min-width: 768px) {
   .px-margin-desktop {
-    padding-left: 16px;
-    padding-right: 16px;
+    padding-left: 32px;
+    padding-right: 32px;
   }
-  
+}
+
+@media (min-width: 1024px) {
+  .px-margin-desktop {
+    padding-left: 48px;
+    padding-right: 48px;
+  }
+
   .py-section-gap {
-    padding-top: 48px;
-    padding-bottom: 48px;
+    padding-top: 80px;
+    padding-bottom: 80px;
+  }
+
+  .pb-section-gap {
+    padding-bottom: 80px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .px-margin-desktop {
+    padding-left: 64px;
+    padding-right: 64px;
   }
 }

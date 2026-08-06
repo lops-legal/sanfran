@@ -14,7 +14,7 @@ export function TrustSection() {
   const { ref: sectionRef, inView: sectionInView } = useInView<HTMLDivElement>({ threshold: 0.1 });
 
   return (
-    <section className="py-20 md:py-28 bg-[#F9F7F5]">
+    <section className="py-12 md:py-20 lg:py-28 bg-[#F9F7F5]">
       <div className="container max-w-3xl mx-auto px-4">
         <div ref={sectionRef} className="text-center space-y-8">
           <h2 className="text-2xl md:text-3xl font-bold text-[#3E2B1E]">

@@ -119,6 +119,7 @@ export default function Marketplace({ onSelectSkill }: MarketplaceProps) {
   });
 
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const handleCreate = useCallback((s: LegalSkill) => {
     mutateItems(prev => [s, ...prev]);
@@ -174,7 +175,7 @@ export default function Marketplace({ onSelectSkill }: MarketplaceProps) {
     <div id="marketplace" className="bg-background text-foreground font-sans pb-section-gap">
 
       {/* ======================== HERO ======================== */}
-      <section className="paper-texture paper-seda relative pt-[140px] pb-20 px-margin-desktop border-b border-border overflow-hidden" style={{ background: "linear-gradient(180deg, #fff8f5 0%, #F9F7F5 100%)" }}>
+      <section className="paper-texture paper-seda relative pt-24 md:pt-32 lg:pt-[140px] pb-20 px-margin-desktop border-b border-border overflow-hidden" style={{ background: "linear-gradient(180deg, #fff8f5 0%, #F9F7F5 100%)" }}>
         <div ref={heroRef} className="max-w-4xl mx-auto text-center flex flex-col items-center relative z-10">
 
           {/* Badge */}
@@ -203,7 +204,7 @@ export default function Marketplace({ onSelectSkill }: MarketplaceProps) {
               onChange={e => startTransition(() => setSearchInput(e.target.value))}
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setSearchFocused(false)}
-              className={`w-full pl-16 pr-20 py-5 bg-white border-2 rounded-2xl shadow-lg focus:ring-4 focus:ring-primary/10 outline-none text-sm transition-all placeholder:text-muted ${searchFocused ? "border-primary/40 shadow-primary/10" : "border-border shadow-primary/5"}`}
+              className={`w-full pl-16 pr-20 py-4 md:py-5 bg-white border-2 rounded-2xl shadow-lg focus:ring-4 focus:ring-primary/10 outline-none text-sm transition-all placeholder:text-muted ${searchFocused ? "border-primary/40 shadow-primary/10" : "border-border shadow-primary/5"}`}
               placeholder="Busque por área jurídica ou tipo de tarefa..."
             />
             <div className="absolute inset-y-0 right-4 flex items-center">
@@ -313,14 +314,31 @@ export default function Marketplace({ onSelectSkill }: MarketplaceProps) {
 
         {/* SIDEBAR */}
         <aside className="w-full lg:w-72 shrink-0">
-          <div className="sticky top-[100px] p-6 bg-white rounded-2xl border border-border/50 shadow-sm">
+          <button
+            type="button"
+            className="lg:hidden w-full flex items-center justify-between gap-3 p-4 mb-3 bg-white rounded-2xl border border-border/50 shadow-sm"
+            aria-expanded={filtersOpen}
+            onClick={() => setFiltersOpen((open) => !open)}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-foreground font-serif">Filtros</span>
+              {activeFilters > 0 && (
+                <span className="text-[10px] font-mono bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                  {activeFilters}
+                </span>
+              )}
+            </div>
+            <ChevronDown className={`w-4 h-4 text-muted transition-transform ${filtersOpen ? "rotate-180" : ""}`} />
+          </button>
+
+          <div className={`${filtersOpen ? "block" : "hidden"} lg:block lg:sticky lg:top-[100px] p-6 bg-white rounded-2xl border border-border/50 shadow-sm`}>
             <div className="flex items-center justify-between mb-6">
-              <div>
+              <div className="hidden lg:block">
                 <h2 className="text-sm font-semibold text-foreground font-serif">Filtros</h2>
                 <p className="text-[10px] text-muted font-mono mt-0.5">Refine sua busca</p>
               </div>
               {activeFilters > 0 && (
-                <button onClick={clearFilters} className="text-[11px] font-mono text-accent hover:text-primary transition-colors flex items-center gap-1">
+                <button onClick={clearFilters} className="text-[11px] font-mono text-accent hover:text-primary transition-colors flex items-center gap-1 ml-auto">
                   <X className="w-3 h-3" />
                   Limpar
                 </button>

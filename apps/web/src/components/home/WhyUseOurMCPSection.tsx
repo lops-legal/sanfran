@@ -24,7 +24,7 @@ export function WhyUseOurMCPSection() {
     const { ref: sectionRef, inView: sectionInView } = useInView<HTMLDivElement>({ threshold: 0.1 });
 
     return (
-        <section className="py-20 md:py-28 bg-[#F9F7F5] relative overflow-hidden">
+        <section className="py-12 md:py-20 lg:py-28 bg-[#F9F7F5] relative overflow-hidden">
             {/* Visual references to "Arcadas da São Francisco" can be subtle arched backgrounds */}
             <div className="absolute top-0 right-0 w-1/3 h-full bg-[#E0D8D0]/20 rounded-bl-[200px] pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-1/4 h-1/2 bg-[#E0D8D0]/20 rounded-tr-[200px] pointer-events-none" />

@@ -1,5 +1,6 @@
 import { HeroSection } from "../components/home/HeroSection";
 import { HowItWorksSection } from "../components/home/HowItWorksSection";
+import { HowToPlugSection } from "../components/home/HowToPlugSection";
 import { FeaturedSkillsSection } from "../components/home/FeaturedSkillsSection";
 import { WhyUseOurMCPSection } from "../components/home/WhyUseOurMCPSection";
 import { WhyUseSkillsSection } from "../components/home/WhyUseSkillsSection";
@@ -14,6 +15,7 @@ export default function Home() {
       <HeroSection />
       <FeaturedSkillsSection />
       <HowItWorksSection />
+      <HowToPlugSection />
       <WhyUseSkillsSection />
       <WhyUseOurMCPSection />
       <TrustSection />

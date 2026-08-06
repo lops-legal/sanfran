@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, Mail, Lock, Loader2, Globe } from "lucide-react";
+import { X, Mail, Lock, Loader2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 interface AuthModalProps {
@@ -98,7 +98,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           disabled={loading}
           className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-background font-medium text-foreground transition-colors hover:bg-muted/10 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <Globe className="h-5 w-5" />
+          <img src="/Google__G__logo.svg.webp" alt="Google" className="h-5 w-5" />
           Continuar com Google
         </button>
 

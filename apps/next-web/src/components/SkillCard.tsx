@@ -1,6 +1,6 @@
 import React from "react";
 import { LegalSkill } from "../lib/types";
-import { Star, ShieldCheck, ArrowUpRight, Download, FileText, Scale, Shield, Briefcase, ShoppingBag, FileSignature } from "lucide-react";
+import { Star, ArrowUpRight, Download, FileText, Scale, Shield, Briefcase, ShoppingBag, FileSignature } from "lucide-react";
 import { useInView } from "../hooks/useInView";
 
 interface SkillCardProps {
@@ -91,11 +91,6 @@ export default function SkillCard({ skill, onSelect, featured = false }: SkillCa
               </div>
               <div className="flex items-center gap-2">
                 <VerticalPill vertical={skill.vertical} />
-                {skill.complianceChecked && (
-                  <span className="pill-tag bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    <ShieldCheck className="w-2.5 h-2.5" /> OAB
-                  </span>
-                )}
                 {recent && (
                   <span className="pill-tag bg-accent/10 text-accent border border-accent/20 font-bold">Novo</span>
                 )}
@@ -222,11 +217,6 @@ export default function SkillCard({ skill, onSelect, featured = false }: SkillCa
             <Download className="w-2.5 h-2.5" />
             {downloadsLabel}
           </span>
-          {skill.complianceChecked && (
-            <span className="flex items-center gap-0.5 text-emerald-600">
-              <ShieldCheck className="w-2.5 h-2.5" /> OAB
-            </span>
-          )}
         </div>
         {/* Hover action button */}
         <div className="opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0">

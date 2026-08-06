@@ -10,14 +10,14 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn(
-    "[Sanfran] VITE_SUPABASE_URL ou VITE_SUPABASE_ANON_KEY ausentes. Configure apps/web/.env e reinicie o servidor."
+    "[Sanfran] NEXT_PUBLIC_SUPABASE_URL ou NEXT_PUBLIC_SUPABASE_ANON_KEY ausentes. Configure apps/next-web/.env e reinicie o servidor."
   );
 }
 
 /** Cliente Supabase — usado apenas para escrita (upsert) no browser. Leituras passam pela API local. */
 export const supabase = supabaseUrl && supabaseAnonKey
   ? createClient(supabaseUrl, supabaseAnonKey)
-  : createClient("https://placeholder.supabase.co", "placeholder-anon-key");
+  : createClient("https://pxnnfxuxfzlzwtlmqpaw.supabase.co", "placeholder-anon-key");
 
 export interface CatalogStats {
   totalPublished: number;

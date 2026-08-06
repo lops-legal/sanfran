@@ -11,22 +11,22 @@ export interface CatalogStats {
 }
 
 const FALLBACK_STATS: CatalogStats = {
-  totalPublished: 42,
-  totalOabVerified: 28,
+  totalPublished: 22,
+  totalOabVerified: 18,
   totalDownloads: 12450,
   verticalCounts: {
-    Trabalhista: 12,
-    LGPD: 8,
-    Consumidor: 10,
-    Societario: 7,
-    Processual: 5,
+    Trabalhista: 2,
+    LGPD: 3,
+    Consumidor: 1,
+    Societario: 8,
+    Processual: 8,
   },
   taskCategoryCounts: {
-    auditoria: 42,
-    peticao: 28,
-    compliance: 35,
-    notificacao: 19,
-    pesquisa: 22,
+    auditoria: 5,
+    peticao: 4,
+    compliance: 5,
+    notificacao: 3,
+    pesquisa: 5,
   },
 };
 
