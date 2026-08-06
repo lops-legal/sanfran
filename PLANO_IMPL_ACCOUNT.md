@@ -31,21 +31,22 @@
 
 ## Fase 1 — Remover `apps/web` sem quebrar o build
 
-- [ ] **T1.1** — Commit das mudanças atuais (há edições não commitadas em `apps/web` e `apps/next-web`) antes de excluir, para não perder trabalho.
-- [ ] **T1.2** — Excluir o diretório `apps/web` (projeto independente).
-- [ ] **T1.3** — Atualizar `netlify.toml`:
+- [x] **T1.1** — Commit das mudanças atuais (há edições não commitadas em `apps/web` e `apps/next-web`) antes de excluir, para não perder trabalho. (`ff243ae`)
+- [x] **T1.2** — Excluir o diretório `apps/web` (projeto independente).
+- [x] **T1.3** — Atualizar `netlify.toml`:
   - `base = "apps/next-web"`
   - `command = "npm run build"`
   - Remover redirect SPA `/* → /index.html` (incompatível com Next) e deixar o Netlify detectar o Next.js via `@netlify/plugin-nextjs`.
-- [ ] **T1.4** — Criar `apps/next-web/.env` com:
+- [~] **T1.4** — Criar `apps/next-web/.env` com:
   ```
   NEXT_PUBLIC_SUPABASE_URL=<URL>
   NEXT_PUBLIC_SUPABASE_ANON_KEY=<ANON_KEY>
   ```
   (hoje o `supabase.ts` usa chave `placeholder` → auth falha). Configurar também no painel do Netlify/Vercel.
-- [ ] **T1.5** — Corrigir aviso cosmético `apps/web/.env` em `apps/next-web/src/lib/supabaseAdapter.ts`.
-- [ ] **T1.6** — Limpar menções a `apps/web` em docs opcionais (`README.md`, etc.).
-- [ ] **T1.7** — **Validar**: `npm run build` em `apps/next-web` + deploy de teste.
+  > ⚠️ Parcial: criado `apps/next-web/.env.example`. Copiar para `.env.local` e preencher com as credenciais reais do Supabase.
+- [x] **T1.5** — Corrigir aviso cosmético `apps/web/.env` em `apps/next-web/src/lib/supabaseAdapter.ts`. (já apontava para `apps/next-web/.env`)
+- [x] **T1.6** — Limpar menções a `apps/web` em docs opcionais (`README.md`, etc.).
+- [x] **T1.7** — **Validar**: `npm run build` em `apps/next-web` + deploy de teste. (build local passou: 8 rotas, sem dependência do `apps/web`)
 
 ---
 

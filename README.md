@@ -66,4 +66,4 @@ Projeto em fase de design. Nenhuma fase de implementação iniciada.
 
 - [Política de Privacidade](PRIVACY_POLICY.md)
 - [Inventário de Dados](docs/data-inventory.md)
-- [Banner de Consentimento](apps/web/src/components/ConsentBanner.tsx)
+
