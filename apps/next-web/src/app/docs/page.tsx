@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BookOpen, Wrench, ArrowLeft, FileText, Terminal, Shield } from "lucide-react";
+import { BookOpen, Wrench, ArrowLeft, FileText, Terminal, Shield, ExternalLink } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Documentação | sanfran.md",
@@ -22,7 +22,8 @@ export default function DocsPage() {
     {
       icon: <Shield className="w-5 h-5" />,
       title: "Critérios de Segurança",
-      description: "Como avaliamos skills com base no OWASP Agentic Top 10.",
+      description: "Todas as skills do catálogo respeitam o framework de segurança OWASP Agentic Skills Top 10.",
+      externalLink: "https://owasp.org/www-project-agentic-skills-top-10/",
     },
     {
       icon: <FileText className="w-5 h-5" />,
@@ -71,6 +72,17 @@ export default function DocsPage() {
               <div>
                 <p className="text-sm font-semibold text-foreground mb-0.5">{section.title}</p>
                 <p className="text-xs text-muted leading-relaxed">{section.description}</p>
+                {"externalLink" in section && section.externalLink && (
+                  <a
+                    href={section.externalLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-primary hover:text-accent hover:underline transition-colors"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    Framework OWASP Agentic Skills Top 10
+                  </a>
+                )}
               </div>
             </div>
           ))}

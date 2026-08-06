@@ -96,9 +96,9 @@ Fornecer análise jurídica especializada para a área correspondente, seguindo 
 2. **Proibido**: Ignorar prazos processuais ou requisitos formais.`;
 
 const BASE_SECURITY_CRITERIA = [
-  { id: "sec-1", description: "LGPD - Proteção de dados pessoais", category: "Privacidade", severity: "high" as const },
-  { id: "sec-2", description: "Sigilo profissional advogado-cliente", category: "Ética", severity: "high" as const },
-  { id: "sec-3", description: "Vieses algorítmicos em recomendações jurídicas", category: "Ética", severity: "medium" as const },
+  { id: "sec-1", description: "LGPD - Proteção de dados pessoais", category: "Privacidade", severity: "low" as const },
+  { id: "sec-2", description: "Sigilo profissional advogado-cliente", category: "Ética", severity: "low" as const },
+  { id: "sec-3", description: "Vieses algorítmicos em recomendações jurídicas", category: "Ética", severity: "low" as const },
 ];
 
 export const MOCK_SKILLS: LegalSkill[] = [
