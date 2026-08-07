@@ -1,7 +1,10 @@
+"use client";
+
 import React from "react";
 import { LegalSkill } from "../lib/types";
 import { Star, ArrowUpRight, Download, FileText, Scale, Shield, Briefcase, ShoppingBag, FileSignature } from "lucide-react";
 import { useInView } from "../hooks/useInView";
+import { useUserLibrary } from "../contexts/UserLibraryContext";
 
 interface SkillCardProps {
   skill: LegalSkill;
@@ -66,6 +69,8 @@ function VerticalPill({ vertical }: { vertical: string }) {
 
 export default function SkillCard({ skill, onSelect, featured = false }: SkillCardProps) {
   const { ref, inView } = useInView<HTMLDivElement>({ threshold: 0.15 });
+  const { isStarred } = useUserLibrary();
+  const starred = isStarred(skill.id);
   const downloadsLabel = skill.starsCount >= 1000
     ? `${(skill.starsCount / 1000).toFixed(1)}k`
     : String(skill.starsCount);
@@ -162,6 +167,15 @@ export default function SkillCard({ skill, onSelect, featured = false }: SkillCa
       {recent && (
         <div className="absolute top-3 right-3 z-10">
           <span className="pill-tag bg-accent/10 text-accent border border-accent/20 font-bold">Novo</span>
+        </div>
+      )}
+
+      {/* Curtida badge */}
+      {starred && (
+        <div className="absolute top-3 left-3 z-10">
+          <span className="pill-tag bg-amber-400/90 text-amber-950 border border-amber-500 font-bold flex items-center gap-1">
+            <Star className="w-2.5 h-2.5 fill-current" /> Curtida
+          </span>
         </div>
       )}
 

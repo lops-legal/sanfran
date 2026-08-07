@@ -73,3 +73,13 @@ export interface SecurityCriterion {
   category: string;
   severity: "low" | "medium" | "high";
 }
+
+export interface UserProfile {
+  id: string;
+  username: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+  oab_verified: boolean;
+  role: "user" | "admin";
+  created_at?: string;
+}

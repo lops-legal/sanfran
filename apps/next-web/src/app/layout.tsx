@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "../components/Navbar";
 import { AuthProvider } from "../contexts/AuthContext";
+import { UserLibraryProvider } from "../contexts/UserLibraryContext";
 
 export const metadata: Metadata = {
   title: "Sanfran.md – Skills jurídicas para agentes de IA",
@@ -47,10 +48,12 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col bg-background text-foreground font-sans antialiased">
         <AuthProvider>
-          <Navbar />
-          <main className="flex-1 w-full relative flex flex-col">
-            {children}
-          </main>
+          <UserLibraryProvider>
+            <Navbar />
+            <main className="flex-1 w-full relative flex flex-col">
+              {children}
+            </main>
+          </UserLibraryProvider>
         </AuthProvider>
       </body>
     </html>

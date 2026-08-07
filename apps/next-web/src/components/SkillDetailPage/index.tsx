@@ -8,6 +8,9 @@ import IntegrationSection from "./IntegrationSection";
 import SkillMarkdownCard from "./SkillMarkdownCard";
 import { LegalSkill } from "../../lib/types";
 import { useAuth } from "../../contexts/AuthContext";
+import { useUserLibrary } from "../../contexts/UserLibraryContext";
+import { toast } from "../Toast";
+import AuthModal from "../AuthModal";
 import { useRouter } from "next/navigation";
 import { useInView } from "../../hooks/useInView";
 import { Dock, DockIcon, DockItem, DockLabel } from "../ui/dock";
@@ -22,6 +25,7 @@ import {
   ChevronRight,
   Download,
   Star,
+  Loader2,
 } from "lucide-react";
 
 // Import cinematic styles
@@ -42,8 +46,14 @@ const SECTIONS = [
 export default function SkillDetailPage({ skill: initialSkill, onBack }: SkillDetailPageProps) {
   const [skill, setSkill] = useState<LegalSkill>(initialSkill);
   const [loadingDetails, setLoadingDetails] = useState(!initialSkill.markdownContent);
+  const [starring, setStarring] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const { user } = useAuth();
+  const { isStarred, toggleStar, recordDownload } = useUserLibrary();
   const router = useRouter();
+
+  const starred = isStarred(skill.id);
 
   const [activeSection, setActiveSection] = useState<string>("overview");
 
@@ -63,6 +73,62 @@ export default function SkillDetailPage({ skill: initialSkill, onBack }: SkillDe
       alert("A exclusão deve ser feita via API Route no Next.js.");
     } catch (err: any) {
       alert("Erro ao excluir skill: " + err.message);
+    }
+  };
+
+  const handleToggleStar = async () => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+    setStarring(true);
+    try {
+      const nowStarred = await toggleStar(skill.id);
+      setSkill((prev) => ({
+        ...prev,
+        starsCount: Math.max(0, (prev.starsCount ?? 0) + (nowStarred ? 1 : -1)),
+      }));
+    } catch (err: unknown) {
+      toast.error("Erro ao favoritar", err instanceof Error ? err.message : "Tente novamente.");
+    } finally {
+      setStarring(false);
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!skill.markdownContent) {
+      if (user) {
+        try {
+          await recordDownload(skill.id);
+        } catch {
+          // silencioso: sem conteudo real, apenas registra
+        }
+      }
+      return;
+    }
+
+    setDownloading(true);
+    try {
+      // Dispara o download do SKILL.md
+      const blob = new Blob([skill.markdownContent], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${skill.slug ?? skill.id}.SKILL.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      // Registra o download na conta (só se logado)
+      if (user) {
+        await recordDownload(skill.id);
+        toast.success("Download registrado", "A skill foi adicionada aos seus downloads.");
+      }
+    } catch (err: unknown) {
+      toast.error("Não foi possível registrar o download", err instanceof Error ? err.message : "Tente novamente.");
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -125,7 +191,38 @@ export default function SkillDetailPage({ skill: initialSkill, onBack }: SkillDe
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={handleToggleStar}
+                  disabled={starring}
+                  title={user ? (starred ? "Remover dos favoritos" : "Favoritar") : "Entre para favoritar"}
+                  className={`flex items-center gap-1.5 px-4 py-2 text-xs font-mono rounded-lg border transition-all disabled:opacity-60 ${
+                    starred
+                      ? "bg-amber-50 text-amber-600 border-amber-300"
+                      : "text-foreground bg-white hover:bg-card border-border"
+                  }`}
+                >
+                  {starring ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Star className={`w-3.5 h-3.5 ${starred ? "fill-amber-400 stroke-amber-400" : ""}`} />
+                  )}
+                  {starred ? "Favoritada" : "Favoritar"}
+                </button>
+
+                <button
+                  onClick={handleDownload}
+                  disabled={downloading}
+                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-mono text-white bg-primary hover:bg-primary-dim rounded-lg transition-all disabled:opacity-60"
+                >
+                  {downloading ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Download className="w-3.5 h-3.5" />
+                  )}
+                  Baixar
+                </button>
+
                 {user && (
                   <>
                     <button
@@ -225,6 +322,8 @@ export default function SkillDetailPage({ skill: initialSkill, onBack }: SkillDe
           </div>
         </div>
       </div>
+
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </div>
   );
 }

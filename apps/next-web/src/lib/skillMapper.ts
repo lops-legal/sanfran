@@ -38,6 +38,7 @@ export function mapDbSkillToLegalSkill(row: DbSkillRow): LegalSkill {
     rating: num(row.rating),
     reviewCount: num(row.review_count),
     starsCount: num(row.stars_count ?? row.downloads_count),
+    downloadsCount: row.downloads_count != null ? num(row.downloads_count) : undefined,
     tags: stringArray(row.tags),
     vertical: str(row.vertical, "Processual"),
     qualityScore: num(row.quality_score),

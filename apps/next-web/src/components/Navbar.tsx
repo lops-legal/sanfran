@@ -18,7 +18,7 @@ export default function Navbar() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
-  const { user, role, signOut } = useAuth();
+  const { user, profile, role, isLoading, signOut } = useAuth();
 
   const dismissSlack = () => {
     localStorage.setItem("slack-banner-dismissed", "true");
@@ -112,7 +112,9 @@ export default function Navbar() {
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-4">
-            {user ? (
+            {isLoading ? (
+              <div className="w-9 h-9 rounded-full bg-muted animate-pulse" aria-hidden />
+            ) : user ? (
               <div className="relative">
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
@@ -130,12 +132,21 @@ export default function Navbar() {
                   <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg py-1 z-50">
                     <div className="px-4 py-2 border-b border-border mb-1">
                       <p className="text-sm font-medium text-foreground truncate">
-                        {user.user_metadata?.full_name || user.email}
+                        {profile?.display_name || profile?.username || user.user_metadata?.full_name || user.email}
                       </p>
                       <p className="text-xs text-muted truncate">
                         {role === "admin" ? "Administrador" : "Usuário"}
                       </p>
                     </div>
+
+                    <Link
+                      href="/account"
+                      onClick={() => setShowUserMenu(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                    >
+                      <UserIcon className="w-4 h-4" />
+                      Minha Conta
+                    </Link>
 
                     {role === "admin" && (
                       <Link
@@ -202,7 +213,7 @@ export default function Navbar() {
                   </Link>
                 );
               })}
-              {!user && (
+              {!isLoading && !user && (
                 <button
                   onClick={openAuthModal}
                   className="mt-2 w-full inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-dim transition-colors"
