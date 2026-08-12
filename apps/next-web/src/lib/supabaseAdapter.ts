@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { SkillDataAdapter, SkillQueryParams, SkillQueryResult } from "../hooks/useInfiniteSkills";
 import { createMockAdapter } from "../hooks/useInfiniteSkills";
 import { LegalSkill } from "./types";
-import { mapDbSkillToLegalSkill } from "./skillMapper";
+import { mapDbSkillToLegalSkill, mapLegalSkillToDb } from "./skillMapper";
 import { MOCK_SKILLS } from "./data";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -146,7 +146,7 @@ export const upsertSkill = async (
         "Content-Type": "application/json",
         ...(session?.access_token ? { "Authorization": `Bearer ${session.access_token}` } : {}),
       },
-      body: JSON.stringify(skill),
+      body: JSON.stringify(mapLegalSkillToDb(skill)),
     });
 
     if (!response.ok) {

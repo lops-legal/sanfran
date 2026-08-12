@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "../../../../lib/supabaseServer";
 import { mapDbSkillToLegalSkill } from "../../../../lib/skillMapper";
 import { SKILL_DETAIL_COLUMNS } from "../../../../lib/supabase-schema";
+import { validateSkillInput } from "../../../../lib/validation";
 
 export async function POST(request: NextRequest) {
   const db = getSupabaseAdmin();
@@ -25,13 +26,28 @@ export async function POST(request: NextRequest) {
   // 2. Processar payload
   try {
     const body = await request.json();
+
+    // Validação server-side
+    const validationErrors = validateSkillInput({
+      name: body.name,
+      description: body.description,
+      vertical: body.vertical,
+      tags: body.tags || [],
+      markdown_body: body.markdown_body || body.markdownContent || "",
+      version: body.version,
+    });
+
+    if (validationErrors.length > 0) {
+      return NextResponse.json(
+        { error: "Erro de validação", details: validationErrors },
+        { status: 400 }
+      );
+    }
     
     // Sanitização básica: forçar author_id do usuário logado
     const skillData = {
       ...body,
       author_id: user.id,
-      // Campos sensíveis que o cliente não deve sobrescrever livremente se não for admin
-      // (Para simplificar, mantemos o que vem, mas em prod idealmente validaríamos contra o perfil)
     };
 
     const { data, error } = await db

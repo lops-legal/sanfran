@@ -5,6 +5,7 @@ import { AuthProvider } from "../contexts/AuthContext";
 import { UserLibraryProvider } from "../contexts/UserLibraryContext";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://sanfran.md"),
   title: "Sanfran.md – Skills jurídicas para agentes de IA",
   description:
     "Catálogo de skills jurídicas brasileiras para agentes de IA. CLT, LGPD, CDC, direito trabalhista, consumidor, societário e mais.",
