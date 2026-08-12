@@ -13,10 +13,9 @@ Plataforma de criação, versionamento e distribuição de **skills jurídicas**
 A maior parte das ferramentas genéricas de IA não possui precisão normativa necessária para o contexto jurídico brasileiro (CDC, CLT, CPC, LGPD, súmulas). Isso gera risco de alucinações e decisão jurídica errada. Há necessidade de um repositório estruturado que garanta qualidade normativa e rastreabilidade.
 
 ## Solução
-A Sanfran.md entrega três peças principais:
-1. **Lex** — IA nativa (GPT‑OSS‑120B) que itera com advogados para criar skills jurídicas seguindo uma meta‑skill própria, extraindo conhecimento tácito e estruturando no formato padrão de 3 níveis (progressive disclosure).
-2. **Skills** — Cada skill é um diretório `SKILL.md` + recursos opcionais, validado contra o padrão `agentskills.io`, com versionamento e seções endereçáveis para edição em locus.
-3. **Marketplace** — Distribuição pública/privada/organizacional das skills, com foco em qualidade normativa verificável (não em volume).
+A Sanfran.md entrega duas peças principais:
+1. **Skills** — Cada skill é um diretório `SKILL.md` + recursos opcionais, validado contra o padrão `agentskills.io`, com versionamento e seções endereçáveis para edição em locus.
+2. **Marketplace** — Distribuição pública/privada/organizacional das skills, com foco em qualidade normativa verificável (não em volume).
 
 ## Roadmap
 - **Q1 2026** – MVP de criação de skills (Lex) e validação normativa.
