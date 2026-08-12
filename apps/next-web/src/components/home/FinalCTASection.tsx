@@ -1,29 +1,27 @@
-"use client";
-
 import React from "react";
-import { useInView } from "../../hooks/useInView";
 import { MessageCircle } from "lucide-react";
+import { RevealContainer } from "../ui/shared/RevealContainer";
 
 export function FinalCTASection() {
-  const { ref, inView } = useInView<HTMLDivElement>({ threshold: 0.3 });
-
   return (
     <section className="py-14 md:py-24 lg:py-32 bg-white relative overflow-hidden">
       <div className="absolute inset-x-0 bottom-0 h-64 bg-[#F9F7F5] rounded-t-[100%] scale-150 pointer-events-none opacity-50" />
 
       <div className="container max-w-3xl mx-auto px-4 relative z-10">
-        <div ref={ref} className={`scale-reveal ${inView ? "is-visible" : ""} text-center space-y-10`}>
+        <RevealContainer threshold={0.3} className="text-center space-y-10">
           <h2 className="text-3xl md:text-5xl font-bold leading-tight text-[#3E2B1E]">
             Pronto para transformar seu fluxo de trabalho?
           </h2>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <button
-              onClick={() => window.open("https://app.sanfran.md/signup", "_blank")}
-              className="relative h-14 px-8 rounded-lg bg-[#5D4432] text-white text-base font-medium hover:bg-[#4D3728] transition-all shadow-lg hover:-translate-y-0.5 w-full sm:w-auto"
+            <a
+              href="https://app.sanfran.md/signup"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="relative h-14 px-8 rounded-lg bg-[#5D4432] text-white text-base font-medium hover:bg-[#4D3728] transition-all shadow-lg hover:-translate-y-0.5 w-full sm:w-auto flex items-center justify-center"
             >
-              <span className="relative z-10">Criar Conta Gratuita</span>
-            </button>
+              Criar Conta Gratuita
+            </a>
             <a
               href="https://sanfranmdskills.netlify.app/docs"
               target="_blank"
@@ -56,7 +54,7 @@ export function FinalCTASection() {
               Fale com o suporte no WhatsApp
             </a>
           </div>
-        </div>
+        </RevealContainer>
       </div>
     </section>
   );

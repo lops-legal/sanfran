@@ -1,15 +1,34 @@
-"use client";
-
 import Marketplace from "../../components/Marketplace";
-import { useRouter } from "next/navigation";
-import { LegalSkill } from "../../lib/types";
+import { getCatalogStats, listSkills } from "../../lib/skills-server";
 
-export default function SkillsPage() {
-  const router = useRouter();
+export const metadata = {
+  title: "Catálogo de Skills Jurídicas | Sanfran.md",
+  description: "Explore centenas de skills jurídicas brasileiras prontas para uso em assistentes de IA via MCP.",
+};
 
-  const handleSelectSkill = (skill: LegalSkill) => {
-    router.push(`/skills/${skill.slug}`);
-  };
+export default async function SkillsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; sort?: string }>;
+}) {
+  const { q = "", sort = "stars" } = await searchParams;
+  
+  // Busca inicial no servidor para renderização instantânea
+  const [initialStats, initialData] = await Promise.all([
+    getCatalogStats(),
+    listSkills({ 
+      search: q, 
+      sortBy: sort as any, 
+      pageSize: 12 
+    })
+  ]);
 
-  return <Marketplace onSelectSkill={handleSelectSkill} />;
+  return (
+    <Marketplace 
+      initialStats={initialStats}
+      initialData={initialData}
+      initialQuery={q}
+      initialSort={sort}
+    />
+  );
 }

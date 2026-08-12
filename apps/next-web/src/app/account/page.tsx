@@ -391,12 +391,12 @@ export default function AccountPage() {
       <CreateSkillModal
         isOpen={showCreateSkill}
         onClose={() => setShowCreateSkill(false)}
-        onSkillCreated={() => {
+        onSuccess={() => {
           setShowCreateSkill(false);
           void loadLists();
           void refresh();
         }}
-        currentUserId={user?.id ?? ""}
+        currentUserId={user?.id}
       />
     </div>
   );
