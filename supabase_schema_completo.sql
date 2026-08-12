@@ -375,3 +375,20 @@ refresh materialized view task_category_stats;
 -- ==============================================================================
 -- FIM
 -- ==============================================================================
+
+-- ==============================================================================
+-- 14. Ativação de RLS (Row Level Security)
+-- ==============================================================================
+
+ALTER TABLE verticals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE task_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE skills ENABLE ROW LEVEL SECURITY;
+ALTER TABLE skill_stars ENABLE ROW LEVEL SECURITY;
+ALTER TABLE skill_downloads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE skill_versions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE skill_sections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE skill_links ENABLE ROW LEVEL SECURITY;
+ALTER TABLE skill_test_cases ENABLE ROW LEVEL SECURITY;
+ALTER TABLE lex_interactions_log ENABLE ROW LEVEL SECURITY;
+ALTER TABLE skill_audit ENABLE ROW LEVEL SECURITY;

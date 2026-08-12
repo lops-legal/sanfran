@@ -39,11 +39,24 @@ export default function AdminDashboard() {
     const newRole = currentRole === "admin" ? "user" : "admin";
     
     try {
-      const { error } = await supabase.from("profiles").update({ role: newRole }).eq("id", profileId);
-      if (error) throw error;
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch("/api/admin/role", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.access_token ? { "Authorization": `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ profileId, newRole }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || "Erro na requisição");
+      }
+
       setProfiles(profiles.map(p => p.id === profileId ? { ...p, role: newRole } : p));
-    } catch (err) {
-      alert("Erro ao alterar cargo. Verifique suas permissões de admin.");
+    } catch (err: any) {
+      alert(`Erro ao alterar cargo: ${err.message}`);
     }
   };
 

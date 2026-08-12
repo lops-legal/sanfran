@@ -129,19 +129,34 @@ export async function fetchCatalogStats(): Promise<CatalogStats> {
   }
 }
 
+/**
+ * Salva ou atualiza uma skill via Route Handler protegido (Server-side).
+ * Não utiliza mais o cliente Supabase do browser diretamente para escrita.
+ */
 export const upsertSkill = async (
   skill: Partial<LegalSkill> & { author_id: string; slug: string }
 ): Promise<LegalSkill | null> => {
-  const { data, error } = await supabase
-    .from("skills")
-    .upsert(skill, { onConflict: "slug" })
-    .select(DETAIL_COLUMNS)
-    .single();
+  try {
+    // Obtém a sessão atual para o cabeçalho Authorization
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    const response = await fetch("/api/skills/upsert", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(session?.access_token ? { "Authorization": `Bearer ${session.access_token}` } : {}),
+      },
+      body: JSON.stringify(skill),
+    });
 
-  if (error) {
-    console.error("Supabase upsert error:", error);
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error || `Erro HTTP ${response.status}`);
+    }
+
+    return (await response.json()) as LegalSkill;
+  } catch (err) {
+    console.error("[Sanfran] Erro no upsert da skill:", err);
     return null;
   }
-
-  return mapDbSkillToLegalSkill(data);
 };
