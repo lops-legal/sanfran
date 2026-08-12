@@ -63,3 +63,34 @@ export function mapDbSkillToLegalSkill(row: DbSkillRow): LegalSkill {
 export function mapDbSkillsToLegalSkills(rows: DbSkillRow[] | null | undefined): LegalSkill[] {
   return (rows ?? []).map(mapDbSkillToLegalSkill);
 }
+
+/**
+ * Mapeia o objeto LegalSkill (frontend) para o formato do banco de dados (snake_case).
+ */
+export function mapLegalSkillToDb(skill: Partial<LegalSkill>): Record<string, any> {
+  const db: Record<string, any> = {};
+  
+  if (skill.id) db.id = skill.id;
+  if (skill.slug) db.slug = skill.slug;
+  if (skill.name) db.name = skill.name;
+  if (skill.description) db.description = skill.description;
+  if (skill.markdownContent) db.markdown_body = skill.markdownContent;
+  if (skill.version) db.version = skill.version;
+  if (skill.authorProfile) db.author_id = skill.authorProfile;
+  if (skill.authorOrganization) db.author_org = skill.authorOrganization;
+  if (skill.ownerAvatar) db.owner_avatar = skill.ownerAvatar;
+  if (skill.vertical) db.vertical = skill.vertical;
+  if (skill.tags) db.tags = skill.tags;
+  if (skill.qualityScore !== undefined) db.quality_score = skill.qualityScore;
+  if (skill.regulatoryScore !== undefined) db.regulatory_score = skill.regulatoryScore;
+  if (skill.complianceChecked !== undefined) db.compliance_checked = skill.complianceChecked;
+  if (skill.objective) db.objective = skill.objective;
+  if (skill.useCase) db.use_case = skill.useCase;
+  if (skill.workflow) db.workflow = skill.workflow;
+  if (skill.professionalRole) db.professional_role = skill.professionalRole;
+  if (skill.playgroundSystemPrompt) db.playground_system_prompt = skill.playgroundSystemPrompt;
+  if (skill.playgroundTestInput) db.playground_test_input = skill.playgroundTestInput;
+  if (skill.playgroundExpectedOutput) db.playground_expected_output = skill.playgroundExpectedOutput;
+
+  return db;
+}

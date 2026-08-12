@@ -43,8 +43,19 @@ create table profiles (
   display_name text,
   avatar_url   text,
   oab_verified boolean default false,
+  role         text default 'user',
   created_at   timestamptz default now()
 );
+
+-- Função para verificar se o usuário atual é admin
+CREATE OR REPLACE FUNCTION is_admin()
+RETURNS boolean AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM profiles 
+    WHERE id = auth.uid()
+      AND role = 'admin'
+  );
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
 
 -- ==============================================================================
 -- 3. Tabela Principal: SKILLS
@@ -375,3 +386,99 @@ refresh materialized view task_category_stats;
 -- ==============================================================================
 -- FIM
 -- ==============================================================================
+
+-- ==============================================================================
+-- 14. Ativação de RLS (Row Level Security) e Políticas Detalhadas
+-- ==============================================================================
+
+-- Habilitar RLS em todas as tabelas
+ALTER TABLE verticals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE task_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE skills ENABLE ROW LEVEL SECURITY;
+ALTER TABLE skill_stars ENABLE ROW LEVEL SECURITY;
+ALTER TABLE skill_downloads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE skill_versions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE skill_sections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE skill_links ENABLE ROW LEVEL SECURITY;
+ALTER TABLE skill_test_cases ENABLE ROW LEVEL SECURITY;
+ALTER TABLE lex_interactions_log ENABLE ROW LEVEL SECURITY;
+ALTER TABLE skill_audit ENABLE ROW LEVEL SECURITY;
+
+-- 14.1. Políticas para Verticals e Task Categories (Leitura Pública)
+CREATE POLICY "Public read verticals" ON verticals FOR SELECT USING (true);
+CREATE POLICY "Public read task_categories" ON task_categories FOR SELECT USING (true);
+
+-- 14.2. Políticas para Skill Stars (Controle por Usuário)
+CREATE POLICY "Public read stars" ON skill_stars FOR SELECT USING (true);
+CREATE POLICY "Users can manage own stars" ON skill_stars 
+  FOR ALL USING (auth.uid() = user_id);
+
+-- 14.3. Políticas para Skill Downloads (Registro e Leitura Própria)
+CREATE POLICY "Users can read own downloads" ON skill_downloads 
+  FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can record own downloads" ON skill_downloads 
+  FOR INSERT WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
+
+-- 14.4. Políticas para Skill Sections e Versions (Seguem a Skill pai)
+CREATE POLICY "Public read skill_sections" ON skill_sections FOR SELECT 
+  USING (EXISTS (SELECT 1 FROM skills WHERE id = skill_id AND (is_published OR author_id = auth.uid()::text)));
+
+-- 14.5. Auditoria e Logs (Apenas Admin)
+CREATE POLICY "Admins can read audit" ON skill_audit FOR SELECT 
+  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Admins can read logs" ON lex_interactions_log FOR SELECT 
+  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+
+-- ==============================================================================
+-- 15. Funções RPC (Remote Procedure Calls)
+-- ==============================================================================
+
+-- Alterna a estrela de uma skill para o usuário logado
+CREATE OR REPLACE FUNCTION toggle_star(p_skill_id uuid)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_user_id uuid := auth.uid();
+    v_exists boolean;
+BEGIN
+    IF v_user_id IS NULL THEN
+        RAISE EXCEPTION 'Não autorizado';
+    END IF;
+
+    SELECT EXISTS (
+        SELECT 1 FROM skill_stars 
+        WHERE skill_id = p_skill_id AND user_id = v_user_id
+    ) INTO v_exists;
+
+    IF v_exists THEN
+        DELETE FROM skill_stars 
+        WHERE skill_id = p_skill_id AND user_id = v_user_id;
+        RETURN false;
+    ELSE
+        INSERT INTO skill_stars (skill_id, user_id)
+        VALUES (p_skill_id, v_user_id);
+        RETURN true;
+    END IF;
+END;
+$$;
+
+-- Registra o download de uma skill
+CREATE OR REPLACE FUNCTION record_download(p_skill_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_user_id uuid := auth.uid();
+BEGIN
+    INSERT INTO skill_downloads (skill_id, user_id)
+    VALUES (p_skill_id, v_user_id);
+    
+    UPDATE skills 
+    SET downloads_count = downloads_count + 1 
+    WHERE id = p_skill_id;
+END;
+$$;

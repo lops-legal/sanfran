@@ -55,13 +55,14 @@ export default function AccountPage() {
     if (!isLoading && !user) router.replace("/");
   }, [isLoading, user, router]);
 
-  // Sincroniza os campos com o perfil carregado (derivação durante o render,
-  // sem disparar setState dentro de effect).
-  if ((profile?.id ?? null) !== prevProfileId) {
-    setPrevProfileId(profile?.id ?? null);
-    setDisplayName(profile?.display_name ?? "");
-    setUsername(profile?.username ?? "");
-  }
+  // Sincroniza os campos com o perfil carregado quando o ID do perfil muda.
+  useEffect(() => {
+    if (profile) {
+      setPrevProfileId(profile.id);
+      setDisplayName(profile.display_name ?? "");
+      setUsername(profile.username ?? "");
+    }
+  }, [profile]);
 
   const loadLists = useCallback(async () => {
     if (!user) return;
