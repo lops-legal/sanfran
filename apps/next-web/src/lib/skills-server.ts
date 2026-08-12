@@ -19,9 +19,16 @@ import {
 
 const STATS_COLUMNS = "vertical, compliance_checked, downloads_count, tags, is_published, is_draft";
 
+/**
+ * Sanitiza a string de busca para evitar injeção de sintaxe no filtro `.or()` do PostgREST
+ * e caracteres curinga indesejados no ILIKE do PostgreSQL.
+ */
 function sanitizeLike(q: string): string {
-  // Evita quebrar a sintaxe do filtro `.or()` do PostgREST
-  return q.replace(/,/g, " ").replace(/%/g, " ").replace(/_/g, " ");
+  return q
+    .replace(/[%,_]/g, "\\$&") // Escapa curingas do SQL
+    .replace(/[()]/g, "")      // Remove parênteses que podem quebrar o .or()
+    .replace(/,/g, " ")        // Substitui vírgulas por espaço
+    .trim();
 }
 
 export async function getSkillBySlug(slug: string): Promise<LegalSkill | null> {
