@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { LegalSkill } from "../lib/types";
 import {
@@ -15,12 +15,9 @@ import { toast } from "./Toast";
 
 // Novas sub-componentes refatoradas
 import { MarketplaceHero } from "./Marketplace/MarketplaceHero";
-import { HighlightsSection } from "./Marketplace/HighlightsSection";
 import { FilterToolbar } from "./Marketplace/FilterToolbar";
 import { SkillGrid } from "./Marketplace/SkillGrid";
 
-// Import cinematic styles
-import "../styles/home-cinematic.css";
 
 interface MarketplaceProps {
   onSelectSkill?: (skill: LegalSkill) => void;
@@ -91,24 +88,6 @@ export default function Marketplace({
   const isPreview = !user;
   const sentinelRef = useInfiniteScrollSentinel(loadMore, !isPreview && hasMore && !isLoading && !error);
 
-  // Destaques baseados na qualidade (Memoizado)
-  const highlights = useMemo(() => {
-    if (!items.length) return [];
-    return [...items]
-      .sort((a, b) => b.qualityScore - a.qualityScore)
-      .slice(0, 3)
-      .map((s, i) => ({
-        id: s.id,
-        name: s.name,
-        desc: s.description,
-        vertical: s.vertical,
-        downloads: s.starsCount,
-        score: s.qualityScore,
-        compliance: s.complianceChecked ? "Total" : s.regulatoryScore >= 80 ? "Alto" : "Moderado",
-        trending: i === 0,
-        skill: s,
-      }));
-  }, [items]);
 
   return (
     <div id="marketplace" className="bg-background text-foreground font-sans pb-section-gap">
@@ -120,14 +99,8 @@ export default function Marketplace({
         totalPub={initialStats?.totalPublished || 0}
       />
 
-      <HighlightsSection 
-        highlights={highlights} 
-        onSelectSkill={handleSelectSkill} 
-      />
 
-      <div className="section-divider-warm" />
-
-      <main className="max-w-[1280px] mx-auto px-margin-desktop py-section-gap">
+      <div className="max-w-6xl mx-auto px-4 pb-16">
         <FilterToolbar 
           totalCount={totalCount}
           sortBy={sortBy}
@@ -145,7 +118,7 @@ export default function Marketplace({
           isPreview={isPreview}
           onAuthClick={() => setIsAuthModalOpen(true)}
         />
-      </main>
+      </div>
 
       <CreateSkillModal 
         isOpen={showCreateModal} 

@@ -18,7 +18,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '24'
         cache: 'npm'
         cache-dependency-path: apps/next-web/package-lock.json
 
@@ -29,7 +29,23 @@ jobs:
     - name: Lint
       working-directory: ./apps/next-web
       run: npm run lint
-      continue-on-error: true # Permite falha de lint sem bloquear o build, mas reporta
+
+    - name: Testes dos motores (TypeScript)
+      working-directory: ./apps/next-web
+      run: npm test
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Testes dos scripts das skills (Python)
+      working-directory: ./apps/next-web/content/skills
+      run: |
+        for d in */tests; do
+          echo "== $d"
+          (cd "$(dirname "$d")" && python -m unittest discover -s tests)
+        done
 
     - name: Build
       working-directory: ./apps/next-web

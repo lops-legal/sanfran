@@ -71,7 +71,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         <button
           onClick={onClose}
           aria-label="Fechar"
-          className="absolute top-4 right-4 rounded-md p-1 text-muted transition-colors hover:bg-muted/20 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+          className="absolute top-4 right-4 rounded-md p-1 text-muted transition-colors hover:bg-subtle/20 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
         >
           <X className="h-5 w-5" />
         </button>
@@ -96,7 +96,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         <button
           onClick={handleGoogleLogin}
           disabled={loading}
-          className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-background font-medium text-foreground transition-colors hover:bg-muted/10 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-background font-medium text-foreground transition-colors hover:bg-subtle/10 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <img src="/Google__G__logo.svg.webp" alt="Google" className="h-5 w-5" />
           Continuar com Google
@@ -148,7 +148,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           <button
             type="submit"
             disabled={loading}
-            className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary font-medium text-white transition-colors hover:bg-primary-dim disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary font-medium text-primary-foreground transition-colors hover:bg-primary-dim disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : isLogin ? "Entrar" : "Criar Conta"}
           </button>

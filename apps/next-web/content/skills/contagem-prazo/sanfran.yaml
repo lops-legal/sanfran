@@ -1,0 +1,33 @@
+slug: contagem-prazo
+titulo: Contagem de Prazo Processual
+versao: 1.0.0
+tipo: execucao
+area: Processual
+personas:
+  - advogado-contencioso
+  - paralegal
+  - gestor-juridico
+tags:
+  - prazos
+  - contagem
+  - dias-uteis
+  - feriados
+  - cpc
+autor: autodev-tecnologia
+origem: github.com/lops-legal/skills-teste-docker
+licenca: MIT
+base_normativa:
+  - ref: CPC, arts. 219, 220, 224, 231 e 1.003, § 6º
+    url: https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2015/lei/l13105.htm
+    conferido_em: 2026-10-17
+  - ref: Lei 11.419/2006, arts. 4º e 5º
+    url: https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2006/lei/l11419.htm
+    conferido_em: 2026-10-17
+  - ref: CLT, arts. 775 e 775-A
+    url: https://www.planalto.gov.br/ccivil_03/decreto-lei/del5452.htm
+    conferido_em: 2026-10-17
+revisao:
+  status: em-revisao
+  revisor: null
+  revisado_em: null
+atualizado_em: 2026-10-17

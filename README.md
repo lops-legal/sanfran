@@ -1,68 +1,57 @@
-# Sanfran.md
+# sanfran.md
 
-[![CI](https://github.com/yourorg/sanfran/actions/workflows/ci.yml/badge.svg)](https://github.com/yourorg/sanfran/actions)
-[![Version](https://img.shields.io/badge/version-1.0.0-blue)]()
-[![License](https://img.shields.io/badge/license-MIT-green)]()
-[![Skills](https://img.shields.io/badge/skills-{{SKILL_COUNT}}-orange)]()
-[![Last Deploy](https://img.shields.io/badge/last_deploy-{{LATEST_DEPLOY}}-brightgreen)]()
+[![CI](https://github.com/lops-legal/sanfran/actions/workflows/ci.yml/badge.svg)](https://github.com/lops-legal/sanfran/actions/workflows/ci.yml)
 
-## Visão
-Plataforma de criação, versionamento e distribuição de **skills jurídicas** para o Direito brasileiro, em conformidade com o padrão aberto [agentskills.io](https://agentskills.io/specification) (SKILL.md).
+Skills jurídicas para o Direito brasileiro — prazos, cálculos, peças, contratos, LGPD, licitações — para usar **dentro do assistente que o profissional já usa**: Claude, ChatGPT, Grok ou Manus.
 
-## Problema
-A maior parte das ferramentas genéricas de IA não possui precisão normativa necessária para o contexto jurídico brasileiro (CDC, CLT, CPC, LGPD, súmulas). Isso gera risco de alucinações e decisão jurídica errada. Há necessidade de um repositório estruturado que garanta qualidade normativa e rastreabilidade.
+Cada skill segue o padrão aberto [SKILL.md](https://agentskills.io/specification), cita a fonte legal com data de conferência e mostra se já passou por revisão de um advogado.
 
-## Solução
-A Sanfran.md entrega duas peças principais:
-1. **Skills** — Cada skill é um diretório `SKILL.md` + recursos opcionais, validado contra o padrão `agentskills.io`, com versionamento e seções endereçáveis para edição em locus.
-2. **Marketplace** — Distribuição pública/privada/organizacional das skills, com foco em qualidade normativa verificável (não em volume).
+## Como o usuário usa
 
-## Roadmap
-- **Q1 2026** – MVP de criação de skills (Lex) e validação normativa.
-- **Q2 2026** – Marketplace público com filtros avançados (Diretor, Tendências, Quente).
-- **Q3 2026** – Dashboard de observabilidade (Streamlit) com métricas de uso e logs estruturados.
-- **Q4 2026** – Integrações com IDEs, CI/CD e geração automática de badges.
+1. **Conector** — no Claude, ChatGPT ou Manus, adicione o endereço `https://<site>/api/mcp` como conector. O assistente passa a buscar e seguir as skills sozinho. Guia em `/integrate`.
+2. **Copiar e colar** — em qualquer assistente (inclusive Grok), copie a skill na página dela e cole no início da conversa.
+3. **Equipe de TI** — o mesmo endpoint fala MCP (Streamable HTTP) e JSON-RPC 2.0; cada skill também existe em markdown puro em `/skills/<slug>.md`.
 
-## Começar rapidamente (Quick‑Start)
-```bash
-git clone https://github.com/yourorg/sanfran.git
-cd sanfran
-npm install   # ou yarn
-npm run dev   # inicia o marketplace local
+## Estrutura
+
 ```
-Acesse o Lex: [Começar no Lex](./apps/lex/README.md)
+apps/next-web/
+├── content/skills/<slug>/      # FONTE DAS SKILLS: SKILL.md + sanfran.yaml (+ references/, scripts/, tests/, evals/)
+├── scripts/build-skills-index.mjs  # valida as skills e gera src/lib/generated/skills-index.ts (roda no dev e no build)
+├── src/app/api/mcp/            # servidor MCP
+├── src/lib/mcp/                # ferramentas e protocolo
+├── src/lib/motores/            # cálculos e validações determinísticos (ex.: número CNJ)
+└── tests/                      # testes dos motores (node --test)
+```
 
-## Métricas de saúde
-- **Skills publicadas**: {{SKILL_COUNT}}
-- **Último deploy**: {{LATEST_DEPLOY}}
-- **Cobertura de testes**: {{TEST_COVERAGE}}%
-- **Taxa de conversão (visita → Lex)**: {{CONVERSION_RATE}}%
+O Supabase guarda contas, favoritos e skills enviadas pelo site. Skills importadas em inglês (`language: en`) não aparecem no catálogo.
 
-## Observabilidade
-Acesse o dashboard de monitoramento em tempo real: [Dashboard](/dashboard)
+## Rodar localmente
 
-### UI/Overlay de Revisão Humana
-Quando o grafo pausa para revisão humana, um overlay será exibido permitindo ao usuário editar o draft da skill e continuar a entrevista via `/interview/continue`. Veja a documentação detalhada em [docs/UI-Overlay.md](./docs/UI-Overlay.md).
+```bash
+cd apps/next-web
+npm ci
+cp .env.example .env.local
+npm run dev      # http://localhost:3000
+npm test         # testes dos motores
+npm run lint
+```
 
+## Adicionar uma skill
 
-## Documentação
-- `docs/visao.md` — visão de produto, posicionamento, não‑objetivos
-- `docs/arquitetura.md` — arquitetura técnica e stack
-- `docs/meta-skill.md` — especificação da meta‑skill que governa a Lex
-- `docs/modelo-dados.md` — schema de dados
-- `docs/fases.md` — plano de implementação por fases
-- `docs/testes.md` — estratégia de testes
+1. Crie `apps/next-web/content/skills/<slug>/SKILL.md` com `name: <slug>` (minúsculas e hífen), `description`, `license` e `metadata` (só texto).
+2. Crie `sanfran.yaml` ao lado (título, tipo, área, personas, base normativa, status de revisão) — veja `content/skills/cnj-numero/` como modelo completo.
+3. Se a skill calcula ou valida algo, coloque o código em `scripts/` com testes em `tests/`.
+4. `npm run skills:index` valida tudo; o CI roda o mesmo.
 
-## Contribuir
-1. Fork o repositório.
-2. Crie uma branch `feature/<nome>`.
-3. Abra um Pull Request descrevendo a mudança.
-## Status
+Status de revisão: `rascunho` → `em-revisao` → `revisada` (só com nome e OAB do revisor).
 
-Projeto em fase de design. Nenhuma fase de implementação iniciada.
+## Segurança
 
-## Privacidade
+- `SUPABASE_SERVICE_ROLE_KEY` só no servidor (nunca com prefixo `NEXT_PUBLIC_`).
+- Escritas passam por Route Handlers em `src/app/api`; leituras no navegador dependem de RLS.
+- O servidor MCP não registra o conteúdo das conversas.
 
-- [Política de Privacidade](PRIVACY_POLICY.md)
-- [Inventário de Dados](docs/data-inventory.md)
+## Licença
 
+Código: MIT. Cada skill declara a própria licença no `SKILL.md`.

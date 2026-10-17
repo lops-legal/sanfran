@@ -2,8 +2,8 @@ import Marketplace from "../../components/Marketplace";
 import { getCatalogStats, listSkills } from "../../lib/skills-server";
 
 export const metadata = {
-  title: "Catálogo de Skills Jurídicas | Sanfran.md",
-  description: "Explore centenas de skills jurídicas brasileiras prontas para uso em assistentes de IA via MCP.",
+  title: "Skills jurídicas",
+  description: "Skills jurídicas brasileiras para usar no Claude, ChatGPT, Grok ou Manus: prazos, contratos, LGPD, contencioso e gestão jurídica.",
 };
 
 export default async function SkillsPage({

@@ -1,5 +1,4 @@
 import { LegalSkill } from "./types";
-import { MOCK_SKILLS } from "./data";
 
 export interface CatalogStats {
   totalPublished: number;
@@ -9,24 +8,13 @@ export interface CatalogStats {
   taskCategoryCounts: Record<string, number>;
 }
 
+/** Sem dados: nunca exibir números inventados. */
 export const FALLBACK_STATS: CatalogStats = {
-  totalPublished: 22,
-  totalOabVerified: 18,
-  totalDownloads: 12450,
-  verticalCounts: {
-    Trabalhista: 2,
-    LGPD: 3,
-    Consumidor: 1,
-    Societario: 8,
-    Processual: 8,
-  },
-  taskCategoryCounts: {
-    auditoria: 5,
-    peticao: 4,
-    compliance: 5,
-    notificacao: 3,
-    pesquisa: 5,
-  },
+  totalPublished: 0,
+  totalOabVerified: 0,
+  totalDownloads: 0,
+  verticalCounts: {},
+  taskCategoryCounts: {},
 };
 
 /**
@@ -52,38 +40,9 @@ export interface SkillQueryResult {
   total: number;
 }
 
-/** Fallback mock (sem rede) — usado também pelos Route Handlers. */
-export function queryMockSkills(params: SkillQueryParams): SkillQueryResult {
-  let filtered = [...MOCK_SKILLS];
-
-  if (params.search) {
-    const q = params.search.toLowerCase();
-    filtered = filtered.filter(
-      (s) => s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)
-    );
-  }
-  if (params.vertical) {
-    filtered = filtered.filter((s) => s.vertical === params.vertical);
-  }
-  if ((params.minQualityScore ?? 0) > 0) {
-    filtered = filtered.filter((s) => s.qualityScore >= params.minQualityScore!);
-  }
-
-  if (params.sortBy === "score") {
-    filtered.sort((a, b) => b.qualityScore - a.qualityScore);
-  } else if (params.sortBy === "recent") {
-    filtered.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-  } else {
-    filtered.sort((a, b) => b.starsCount - a.starsCount);
-  }
-
-  const pageSize = params.pageSize || 12;
-  const cursor = params.cursor || 0;
-
-  const skills = filtered.slice(cursor, cursor + pageSize);
-  const nextCursor = cursor + pageSize < filtered.length ? cursor + pageSize : null;
-
-  return { skills, nextCursor, total: filtered.length };
+/** Resultado vazio usado quando a API está indisponível no navegador. */
+export function emptySkillResult(): SkillQueryResult {
+  return { skills: [], nextCursor: null, total: 0 };
 }
 
 export async function fetchSkills(params: SkillQueryParams = {}): Promise<SkillQueryResult> {
@@ -101,8 +60,8 @@ export async function fetchSkills(params: SkillQueryParams = {}): Promise<SkillQ
     if (!response.ok) throw new Error(`Erro HTTP ${response.status}`);
     return (await response.json()) as SkillQueryResult;
   } catch (err) {
-    console.warn("[Sanfran] API /api/skills indisponível, usando mock:", err);
-    return queryMockSkills(params);
+    console.warn("[Sanfran] API /api/skills indisponível:", err);
+    return emptySkillResult();
   }
 }
 
@@ -113,8 +72,8 @@ export async function fetchSkillBySlug(slug: string): Promise<LegalSkill | null>
     if (!response.ok) throw new Error(`Erro HTTP ${response.status}`);
     return (await response.json()) as LegalSkill;
   } catch (err) {
-    console.warn("[Sanfran] API /api/skills/[slug] indisponível, usando mock:", err);
-    return MOCK_SKILLS.find((s) => s.slug === slug || s.id === slug) ?? null;
+    console.warn("[Sanfran] API /api/skills/[slug] indisponível:", err);
+    return null;
   }
 }
 

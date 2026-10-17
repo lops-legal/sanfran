@@ -1,111 +1,119 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BookOpen, Wrench, ArrowLeft, FileText, Terminal, Shield, ExternalLink } from "lucide-react";
+import { BadgeCheck, BookOpen, Calculator, CircleDashed, FileText, Plug, Scale, ShieldAlert } from "lucide-react";
+import { Badge, FeatureCard, PillLink, Section, SectionHeader } from "../../components/site/primitives";
+import { FinalCTASection } from "../../components/site/sections";
 
 export const metadata: Metadata = {
-  title: "Documentação | sanfran.md",
-  description: "A documentação completa do sanfran.md está sendo elaborada. Em breve você terá acesso a guias, referências de API e tutoriais.",
+  title: "Como funciona",
+  description: "O que é uma skill jurídica, como usar no Claude, ChatGPT, Grok ou Manus, como funciona a revisão e quais são os limites.",
+  alternates: { canonical: "/docs" },
 };
 
+const KINDS = [
+  { icon: FileText, title: "Execução", text: "Produz algo pronto para revisar: peça, parecer, resposta ao Procon, checklist preenchido, relatório." },
+  { icon: BookOpen, title: "Consulta", text: "Responde uma dúvida com fundamento: qual recurso cabe, qual base legal, o que mudou com a lei nova." },
+  { icon: Calculator, title: "Cálculo e validação", text: "Faz contas e conferências em que a IA costuma errar: prazos, atualização de débitos, número de processo." },
+];
+
+const FAQ = [
+  {
+    q: "Preciso saber programar?",
+    a: "Não. Você pode copiar a skill e colar na conversa, ou adicionar o sanfran como conector no Claude, ChatGPT ou Manus seguindo o passo a passo.",
+  },
+  {
+    q: "O que acontece com os documentos que eu envio?",
+    a: "Os documentos ficam no seu assistente (Claude, ChatGPT etc.). O sanfran entrega instruções e cálculos; não guarda o conteúdo das suas conversas.",
+  },
+  {
+    q: "Posso confiar no resultado?",
+    a: "As skills reduzem erros e citam a fonte legal, mas são ferramenta de apoio. Confira a fundamentação, especialmente em skills que ainda estão em revisão, antes de usar em um caso real.",
+  },
+  {
+    q: "Quem escreve e revisa as skills?",
+    a: "Cada skill tem autor e versão. A revisão jurídica é feita por advogados da área, identificados pelo nome e número da OAB na página da skill.",
+  },
+  {
+    q: "Encontrei um erro. O que faço?",
+    a: "Avise no Slack da comunidade ou abra uma sugestão no GitHub. Cálculos e prazos têm prioridade de correção.",
+  },
+  {
+    q: "Posso ter skills só do meu escritório ou empresa?",
+    a: "Sim. Skills privadas transformam os seus modelos e procedimentos em instruções que só a sua equipe usa. Fale com a gente.",
+  },
+];
+
 export default function DocsPage() {
-  const sections = [
-    {
-      icon: <BookOpen className="w-5 h-5" />,
-      title: "Guias de Uso",
-      description: "Como criar, publicar e usar skills jurídicas com agentes de IA.",
-    },
-    {
-      icon: <Terminal className="w-5 h-5" />,
-      title: "Referência da API",
-      description: "Endpoints REST para busca, filtragem e gerenciamento de skills.",
-    },
-    {
-      icon: <Shield className="w-5 h-5" />,
-      title: "Critérios de Segurança",
-      description: "Todas as skills do catálogo respeitam o framework de segurança OWASP Agentic Skills Top 10.",
-      externalLink: "https://owasp.org/www-project-agentic-skills-top-10/",
-    },
-    {
-      icon: <FileText className="w-5 h-5" />,
-      title: "Formato Markdown",
-      description: "Especificação do formato .md utilizado para descrever skills jurídicas.",
-    },
-  ];
-
   return (
-    <main className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center px-4 py-20">
-      {/* Background glow */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
-
-      <div className="relative z-10 max-w-2xl mx-auto text-center">
-        {/* Icon */}
-        <div className="flex items-center justify-center mb-8">
-          <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20">
-            <BookOpen className="w-8 h-8 text-blue-500" />
+    <>
+      <section className="py-20 md:py-28">
+        <div className="max-w-3xl mx-auto px-4 text-center flex flex-col items-center gap-6">
+          <Badge>
+            <Scale className="w-3.5 h-3.5" aria-hidden />
+            Guia rápido
+          </Badge>
+          <h1 className="text-4xl md:text-5xl font-semibold tracking-tight leading-tight text-balance">Como funciona o sanfran</h1>
+          <p className="text-lg text-muted-foreground max-w-2xl text-pretty">
+            Uma skill é um procedimento de trabalho jurídico escrito para a IA seguir: o passo a passo, as regras legais que
+            costumam ser esquecidas, o formato da resposta e os limites.
+          </p>
+          <div className="flex flex-wrap justify-center gap-3 pt-2">
+            <PillLink href="/skills" variant="primary" icon={BookOpen}>Ver as skills</PillLink>
+            <PillLink href="/integrate" icon={Plug}>Conectar ao assistente</PillLink>
           </div>
         </div>
+      </section>
 
-        {/* Badge */}
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 text-xs font-semibold uppercase tracking-widest mb-6">
-          <Wrench className="w-3 h-3" />
-          Em Desenvolvimento
-        </span>
-
-        <h1 className="text-4xl md:text-5xl font-serif font-bold text-foreground mb-4 leading-tight">
-          Documentação
-        </h1>
-
-        <p className="text-lg text-muted leading-relaxed mb-10">
-          Estamos elaborando a documentação completa do sanfran.md — desde guias para criação de skills até a referência técnica da nossa API.
-        </p>
-
-        {/* Planned sections */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-12 text-left">
-          {sections.map((section) => (
-            <div
-              key={section.title}
-              className="flex items-start gap-3 p-4 rounded-xl border border-border bg-card/50"
-            >
-              <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-primary/10 text-primary shrink-0 mt-0.5">
-                {section.icon}
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground mb-0.5">{section.title}</p>
-                <p className="text-xs text-muted leading-relaxed">{section.description}</p>
-                {"externalLink" in section && section.externalLink && (
-                  <a
-                    href={section.externalLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-primary hover:text-accent hover:underline transition-colors"
-                  >
-                    <ExternalLink className="w-3 h-3" />
-                    Framework OWASP Agentic Skills Top 10
-                  </a>
-                )}
-              </div>
-            </div>
+      <Section band>
+        <SectionHeader title="Três tipos de skill" subtitle="Cada uma resolve uma dor diferente do dia a dia." />
+        <div className="grid gap-4 md:grid-cols-3">
+          {KINDS.map((k) => (
+            <FeatureCard key={k.title} icon={k.icon} title={k.title}>
+              {k.text}
+            </FeatureCard>
           ))}
         </div>
+      </Section>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 h-10 px-5 rounded-full bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Voltar para o início
-          </Link>
-          <a
-            href="https://sanfranmd.slack.com/join/shared_invite/zt-44ys5kr75-li43f~B2o4TGQLsDwqc0rQ#/shared-invite/email"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 h-10 px-5 rounded-full border border-border text-sm font-medium text-foreground hover:bg-muted/10 transition-colors"
-          >
-            Acompanhar no Slack
-          </a>
+      <Section>
+        <SectionHeader title="O selo de revisão" subtitle="Mostramos com clareza o que já foi revisado por um advogado e o que ainda não foi." />
+        <div className="grid gap-4 md:grid-cols-2 max-w-4xl mx-auto">
+          <FeatureCard icon={BadgeCheck} title="Revisada">
+            Conferida por advogado da área, identificado com nome e OAB. Base normativa com data da última conferência.
+          </FeatureCard>
+          <FeatureCard icon={CircleDashed} title="Em revisão">
+            Já pode ser usada como apoio, mas a fundamentação ainda não passou pela revisão final. Confira antes de usar.
+          </FeatureCard>
         </div>
-      </div>
-    </main>
+      </Section>
+
+      <Section band>
+        <SectionHeader title="Perguntas frequentes" />
+        <div className="max-w-3xl mx-auto rounded-lg border border-border bg-card divide-y divide-border">
+          {FAQ.map((f) => (
+            <details key={f.q} className="group p-5">
+              <summary className="cursor-pointer list-none flex items-center justify-between gap-4 font-medium">
+                {f.q}
+                <span className="text-muted-foreground transition-transform group-open:rotate-45 text-xl leading-none">+</span>
+              </summary>
+              <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </Section>
+
+      <Section>
+        <div className="max-w-3xl mx-auto flex gap-4 p-5 rounded-lg border border-border bg-card">
+          <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5 text-muted-foreground" aria-hidden />
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            <b className="text-foreground font-medium">Limites.</b> O sanfran é ferramenta de apoio ao trabalho jurídico e não
+            substitui a análise de um advogado. Os resultados dependem das informações fornecidas e da legislação vigente na data
+            de conferência indicada em cada skill. Veja o <Link href="/integrate" className="underline underline-offset-2">guia de conexão</Link>.
+          </p>
+        </div>
+      </Section>
+
+      <FinalCTASection />
+    </>
   );
 }

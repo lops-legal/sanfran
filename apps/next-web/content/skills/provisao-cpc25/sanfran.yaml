@@ -1,0 +1,24 @@
+slug: provisao-cpc25
+titulo: Classificação de Risco e Provisão (CPC 25)
+versao: 1.0.0
+tipo: execucao
+area: Gestão Jurídica
+personas:
+  - advogado-contencioso
+  - controller
+  - gestor-juridico
+tags:
+  - provisao
+  - contingencia
+  - cpc25
+  - contencioso
+  - reporte-financeiro
+autor: autodev-tecnologia
+origem: github.com/lops-legal/skills-teste-docker
+licenca: MIT
+base_normativa: []
+revisao:
+  status: em-revisao
+  revisor: null
+  revisado_em: null
+atualizado_em: 2026-10-17

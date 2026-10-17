@@ -36,6 +36,11 @@ export interface LegalSkill {
   workflow?: string;
   professionalRole?: string;
   securityCriteria?: SecurityCriterion[];
+  /** Status de revisão jurídica (skills do repositório). */
+  reviewStatus?: "rascunho" | "em-revisao" | "revisada";
+  skillType?: "motor" | "execucao" | "conhecimento";
+  legalBasis?: { ref: string; url: string | null; checkedAt: string | null }[];
+  files?: string[];
 }
 
 export interface ChatMessage {

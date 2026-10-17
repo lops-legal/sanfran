@@ -1,29 +1,17 @@
-"use client";
-
 import React from "react";
-import { useInView } from "../../../hooks/useInView";
 
 interface RevealContainerProps {
   children: React.ReactNode;
   className?: string;
+  /** Mantidos por compatibilidade; o conteúdo não é mais escondido antes de entrar na tela. */
   delay?: number;
   threshold?: number;
 }
 
-export function RevealContainer({ children, className = "", delay = 0, threshold = 0.1 }: RevealContainerProps) {
-  const { ref, inView } = useInView<HTMLDivElement>({ threshold });
-  
-  const revealStyle = {
-    transitionDelay: `${delay}ms`,
-  };
-
-  return (
-    <div 
-      ref={ref} 
-      style={revealStyle}
-      className={`${className} transition-all duration-1000 transform ${inView ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"}`}
-    >
-      {children}
-    </div>
-  );
+/**
+ * Antes escondia o conteúdo (opacity 0) até hidratar e entrar no viewport,
+ * o que deixava o título da home invisível no carregamento. Agora é só um wrapper.
+ */
+export function RevealContainer({ children, className = "" }: RevealContainerProps) {
+  return <div className={className}>{children}</div>;
 }

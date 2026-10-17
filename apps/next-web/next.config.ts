@@ -2,14 +2,19 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   async rewrites() {
-    return [
-      {
-        // Proxies apenas os endpoints que NÃO têm Route Handler local.
-        // skills/catalog/account são resolvidos pelo próprio Next.js.
-        source: "/api/:path((?!skills|catalog|account).*)",
-        destination: `${process.env.API_URL || "http://localhost:8000"}/api/:path*`,
-      },
-    ];
+    return {
+      beforeFiles: [
+        // Markdown cru de cada skill: /skills/contagem-prazo.md
+        { source: "/skills/:slug([a-z0-9-]+)\\.md", destination: "/api/skills/:slug/md" },
+      ],
+      afterFiles: [
+        {
+          // Proxies apenas os endpoints que NÃO têm Route Handler local.
+          source: "/api/:path((?!skills|catalog|account|admin|mcp).*)",
+          destination: `${process.env.API_URL || "http://localhost:8000"}/api/:path*`,
+        },
+      ],
+    };
   },
 };
 

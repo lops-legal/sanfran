@@ -173,7 +173,7 @@ export default function AccountPage() {
           </div>
           <button
             onClick={() => setShowCreateSkill(true)}
-            className="inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-dim transition-colors"
+            className="inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary-dim transition-colors"
           >
             <Plus className="w-4 h-4" /> Nova Skill
           </button>
@@ -198,7 +198,7 @@ export default function AccountPage() {
               <div className="text-center">
                 <p className="text-sm font-semibold">{profile?.display_name || "Sem nome definido"}</p>
                 <p className="text-xs text-muted">{user?.email}</p>
-                <div className="mt-1 inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full border bg-muted/30 text-muted border-border">
+                <div className="mt-1 inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full border bg-subtle/30 text-muted border-border">
                   {oabVerified ? <BadgeCheck className="w-3 h-3" /> : <ShieldCheck className="w-3 h-3" />}
                   {oabVerified ? "OAB Verificado" : "OAB não verificado"}
                 </div>
@@ -230,7 +230,7 @@ export default function AccountPage() {
               <button
                 onClick={handleSaveProfile}
                 disabled={savingProfile}
-                className="inline-flex items-center gap-2 h-10 px-4 rounded-lg border border-border bg-background text-sm font-medium hover:bg-muted/30 transition-colors disabled:opacity-60"
+                className="inline-flex items-center gap-2 h-10 px-4 rounded-lg border border-border bg-background text-sm font-medium hover:bg-subtle/30 transition-colors disabled:opacity-60"
               >
                 {savingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Salvar perfil
@@ -351,7 +351,7 @@ export default function AccountPage() {
               <button
                 type="submit"
                 disabled={savingPassword}
-                className="inline-flex items-center gap-2 h-10 px-4 rounded-lg border border-border bg-background text-sm font-medium hover:bg-muted/30 transition-colors disabled:opacity-60"
+                className="inline-flex items-center gap-2 h-10 px-4 rounded-lg border border-border bg-background text-sm font-medium hover:bg-subtle/30 transition-colors disabled:opacity-60"
               >
                 {savingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
                 Alterar senha
@@ -361,7 +361,7 @@ export default function AccountPage() {
             <div className="border-t border-border pt-5">
               <button
                 onClick={signOut}
-                className="inline-flex items-center gap-2 h-10 px-4 rounded-lg border border-border bg-background text-sm font-medium text-foreground hover:bg-muted/30 transition-colors"
+                className="inline-flex items-center gap-2 h-10 px-4 rounded-lg border border-border bg-background text-sm font-medium text-foreground hover:bg-subtle/30 transition-colors"
               >
                 <LogOut className="w-4 h-4" /> Sair
               </button>
@@ -409,7 +409,7 @@ function SkillLinks({ skills }: { skills: LegalSkill[] }) {
         <li key={s.id}>
           <Link
             href={`/skills/${s.slug ?? s.id}`}
-            className="flex items-center justify-between gap-3 py-2.5 text-sm hover:bg-muted/30 rounded-lg px-2 transition-colors"
+            className="flex items-center justify-between gap-3 py-2.5 text-sm hover:bg-subtle/30 rounded-lg px-2 transition-colors"
           >
             <span className="truncate font-medium">{s.name}</span>
             <span className="shrink-0 text-xs font-mono text-muted flex items-center gap-2">
@@ -460,7 +460,7 @@ function ConnectionRow({
           className={`text-[11px] font-mono px-2.5 py-1 rounded-full border ${
             connected
               ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-              : "bg-muted/30 text-muted border-border"
+              : "bg-subtle/30 text-muted border-border"
           }`}
         >
           {status}

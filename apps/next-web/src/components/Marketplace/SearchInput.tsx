@@ -38,9 +38,9 @@ export function SearchInput({ initialValue, onSearch }: SearchInputProps) {
   };
 
   return (
-    <div className="relative w-full max-w-2xl mb-8">
-      <div className={`absolute inset-y-0 left-6 flex items-center pointer-events-none transition-colors duration-300 ${focused ? "text-primary" : "text-muted"}`}>
-        <Search className="w-5 h-5" />
+    <div className="relative w-full max-w-2xl">
+      <div className={`absolute inset-y-0 left-5 flex items-center pointer-events-none ${focused ? "text-foreground" : "text-muted-foreground"}`}>
+        <Search className="w-4 h-4" />
       </div>
       <input
         ref={searchRef}
@@ -48,11 +48,11 @@ export function SearchInput({ initialValue, onSearch }: SearchInputProps) {
         onChange={handleChange}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        className={`w-full pl-16 pr-20 py-4 md:py-5 bg-white border-2 rounded-2xl shadow-lg focus:ring-4 focus:ring-primary/10 outline-none text-sm transition-all placeholder:text-muted ${focused ? "border-primary/40 shadow-primary/10" : "border-border shadow-primary/5"}`}
+        className={`w-full pl-12 pr-14 h-12 bg-card border rounded-full outline-none text-sm transition-colors placeholder:text-muted-foreground ${focused ? "border-foreground/30" : "border-border"}`}
         placeholder="Busque por área jurídica ou tipo de tarefa..."
       />
       <div className="absolute inset-y-0 right-4 flex items-center">
-        <kbd className="hidden sm:inline-flex items-center px-2 py-1 text-[10px] font-mono text-muted bg-card border border-border rounded">/</kbd>
+        <kbd className="hidden sm:inline-flex items-center px-2 py-1 text-[10px] font-mono text-muted-foreground bg-card border border-border rounded">/</kbd>
       </div>
     </div>
   );

@@ -1,0 +1,38 @@
+slug: cnj-numero
+titulo: Número de processo CNJ
+versao: 1.0.0
+tipo: motor
+personas:
+  - advogado-contencioso
+  - estagiario
+  - paralegal
+  - legal-ops
+  - in-house
+  - setor-publico
+dores:
+  - cadastro-errado-de-processo
+  - consulta-falha-por-numero-invalido
+areas:
+  - processual
+tribunais:
+  - todos
+base_normativa:
+  - ref: Resolução CNJ nº 65/2008, arts. 1º a 3º e Anexo VIII
+    url: https://atos.cnj.jus.br/atos/detalhar/119
+    conferido_em: 2026-10-17
+ferramentas_mcp:
+  - nome: validar_numero_cnj
+    entrypoint: scripts/cnj.py
+revisao:
+  status: rascunho
+  revisor: null
+  revisado_em: null
+qualidade:
+  testes_unitarios: tests/test_cnj.py
+  evals: evals/casos.jsonl
+  ultima_execucao: 2026-10-17
+  resultado: 13/13 testes unitários
+area: Processual
+autor: sanfran
+licenca: MIT
+atualizado_em: 2026-10-17
