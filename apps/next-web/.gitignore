@@ -44,3 +44,8 @@ next-env.d.ts
 
 # Python
 __pycache__/
+
+# Cloudflare (OpenNext / wrangler)
+.open-next/
+.wrangler/
+.dev.vars

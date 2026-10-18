@@ -37,6 +37,20 @@ npm test         # testes dos motores
 npm run lint
 ```
 
+## Deploy (Cloudflare Workers)
+
+Produção: **https://sanfran.lucascardososilva.workers.dev** — Next.js publicado como Worker via [OpenNext](https://opennext.js.org/cloudflare).
+
+```bash
+cd apps/next-web
+npx wrangler login     # uma vez
+npm run deploy         # gera o índice de skills, faz o build OpenNext e publica
+```
+
+- Configuração: `wrangler.jsonc` e `open-next.config.ts`.
+- `NEXT_PUBLIC_*` entram no build: rode o deploy com o `.env.local` preenchido. `NEXT_PUBLIC_SITE_URL` define o endereço do conector exibido em `/integrate`.
+- **Windows:** se o caminho do projeto for muito longo, o `workerd` não executa (`spawn ... ENOENT`). Rode `npx opennextjs-cloudflare build`, copie `.open-next/` e `wrangler.jsonc` para uma pasta de caminho curto e rode `npx wrangler deploy` nela.
+
 ## Adicionar uma skill
 
 1. Crie `apps/next-web/content/skills/<slug>/SKILL.md` com `name: <slug>` (minúsculas e hífen), `description`, `license` e `metadata` (só texto).

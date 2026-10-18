@@ -1,6 +1,6 @@
 /** Constantes públicas do site. A URL de produção vem de NEXT_PUBLIC_SITE_URL. */
 
-export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://sanfranmd.vercel.app").replace(/\/$/, "");
+export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://sanfran.lucascardososilva.workers.dev").replace(/\/$/, "");
 export const SITE_HOST = SITE_URL.replace(/^https?:\/\//, "");
 export const MCP_URL = `${SITE_URL}/api/mcp`;
 
