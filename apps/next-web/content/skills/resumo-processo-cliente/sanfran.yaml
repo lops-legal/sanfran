@@ -1,0 +1,31 @@
+slug: resumo-processo-cliente
+titulo: Resumo do processo para o cliente
+versao: 1.0.0
+tipo: execucao
+area: Processual
+personas:
+  - advogado-contencioso
+  - advogado-consultivo
+dores:
+  - cliente-nao-entende-o-processo
+  - relatorio-demorado
+tags:
+  - linguagem-simples
+  - cliente
+  - relatorio
+autor: sanfran
+licenca: MIT
+depende_de:
+  - calcular-prazo
+base_normativa:
+  - ref: Pacto Nacional do Judiciário pela Linguagem Simples (CNJ, 2023)
+    url: null
+    conferido_em: null
+revisao:
+  status: rascunho
+  revisor: null
+  revisado_em: null
+qualidade:
+  evals: evals/casos.jsonl
+  casos: 8
+atualizado_em: 2026-10-17

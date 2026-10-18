@@ -1,0 +1,35 @@
+slug: resposta-procon
+titulo: Resposta a reclamação de consumidor
+versao: 1.0.0
+tipo: execucao
+area: Consumidor
+personas:
+  - empresas
+  - in-house
+  - atendimento
+dores:
+  - reclamacao-procon
+  - resposta-fora-do-padrao
+tags:
+  - cdc
+  - procon
+  - consumidor-gov-br
+  - atendimento
+autor: sanfran
+licenca: MIT
+depende_de: []
+base_normativa:
+  - ref: CDC, arts. 18, 20, 26, 30, 35, 42, 49 e 71
+    url: https://www.planalto.gov.br/ccivil_03/leis/l8078compilado.htm
+    conferido_em: null
+  - ref: Decreto 2.181/1997, art. 42
+    url: https://www.planalto.gov.br/ccivil_03/decreto/d2181.htm
+    conferido_em: null
+revisao:
+  status: rascunho
+  revisor: null
+  revisado_em: null
+qualidade:
+  evals: evals/casos.jsonl
+  casos: 8
+atualizado_em: 2026-10-17

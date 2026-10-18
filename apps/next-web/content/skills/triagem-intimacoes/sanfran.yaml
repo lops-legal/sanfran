@@ -1,0 +1,44 @@
+slug: triagem-intimacoes
+titulo: Triagem diária de intimações
+versao: 1.0.0
+tipo: execucao
+area: Processual
+personas:
+  - advogado-contencioso
+  - paralegal
+  - estagiario
+  - legal-ops
+dores:
+  - perder-prazo
+  - triagem-manual-lenta
+tags:
+  - intimacoes
+  - djen
+  - prazos
+  - agenda
+autor: sanfran
+licenca: MIT
+depende_de:
+  - calcular-prazo
+  - cnj-numero
+base_normativa:
+  - ref: CPC, arts. 218, 219, 220, 224, 229 e 231
+    url: https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2015/lei/l13105.htm
+    conferido_em: null
+  - ref: Lei 11.419/2006, arts. 4º e 5º
+    url: https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2006/lei/l11419.htm
+    conferido_em: null
+  - ref: CLT, arts. 775, 775-A, 893 e 897-A
+    url: https://www.planalto.gov.br/ccivil_03/decreto-lei/del5452.htm
+    conferido_em: null
+  - ref: Lei 5.584/1970, art. 6º
+    url: https://www.planalto.gov.br/ccivil_03/leis/l5584.htm
+    conferido_em: null
+revisao:
+  status: rascunho
+  revisor: null
+  revisado_em: null
+qualidade:
+  evals: evals/casos.jsonl
+  casos: 8
+atualizado_em: 2026-10-17

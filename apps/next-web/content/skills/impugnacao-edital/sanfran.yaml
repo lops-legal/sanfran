@@ -1,0 +1,32 @@
+slug: impugnacao-edital
+titulo: Impugnação de edital de licitação
+versao: 1.0.0
+tipo: execucao
+area: Setor Público
+personas:
+  - empresas
+  - advogado-administrativista
+  - setor-publico
+dores:
+  - clausula-restritiva
+  - perder-prazo-de-impugnacao
+tags:
+  - licitacoes
+  - lei-14133
+  - impugnacao
+  - edital
+autor: sanfran
+licenca: MIT
+depende_de: []
+base_normativa:
+  - ref: Lei 14.133/2021, arts. 5º, 9º, 40, 41, 55, 63, 67, 69, 164 e 183
+    url: https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/l14133.htm
+    conferido_em: null
+revisao:
+  status: rascunho
+  revisor: null
+  revisado_em: null
+qualidade:
+  evals: evals/casos.jsonl
+  casos: 8
+atualizado_em: 2026-10-17

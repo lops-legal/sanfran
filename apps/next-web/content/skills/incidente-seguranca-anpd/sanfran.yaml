@@ -1,0 +1,35 @@
+slug: incidente-seguranca-anpd
+titulo: Incidente de segurança com dados pessoais
+versao: 1.0.0
+tipo: execucao
+area: LGPD
+personas:
+  - dpo
+  - in-house
+  - ti
+dores:
+  - prazo-curto-de-comunicacao
+  - decidir-se-comunica
+tags:
+  - lgpd
+  - anpd
+  - vazamento
+  - incidente
+autor: sanfran
+licenca: MIT
+depende_de: []
+base_normativa:
+  - ref: LGPD, arts. 5º e 48
+    url: https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm
+    conferido_em: null
+  - ref: Resolução CD/ANPD nº 15/2024 (Regulamento de Comunicação de Incidente de Segurança)
+    url: null
+    conferido_em: null
+revisao:
+  status: rascunho
+  revisor: null
+  revisado_em: null
+qualidade:
+  evals: evals/casos.jsonl
+  casos: 8
+atualizado_em: 2026-10-17

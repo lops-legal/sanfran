@@ -1,0 +1,32 @@
+slug: etp-14133
+titulo: Estudo Técnico Preliminar (Lei 14.133)
+versao: 1.0.0
+tipo: execucao
+area: Setor Público
+personas:
+  - setor-publico
+  - procuradoria
+  - controle-interno
+dores:
+  - etp-generico
+  - apontamento-do-controle
+tags:
+  - licitacoes
+  - lei-14133
+  - etp
+  - fase-preparatoria
+autor: sanfran
+licenca: MIT
+depende_de: []
+base_normativa:
+  - ref: Lei 14.133/2021, arts. 18, 23, 40 e 53
+    url: https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/l14133.htm
+    conferido_em: null
+revisao:
+  status: rascunho
+  revisor: null
+  revisado_em: null
+qualidade:
+  evals: evals/casos.jsonl
+  casos: 8
+atualizado_em: 2026-10-17
