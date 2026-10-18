@@ -1,0 +1,41 @@
+slug: calcular-prazo
+titulo: Contagem de prazo processual (CPC e CLT)
+versao: 1.0.0
+tipo: motor
+area: Processual
+personas: [advogado-contencioso, advogado-trabalhista, estagiario, paralegal, legal-ops, in-house]
+dores: [perder-prazo, contagem-manual-lenta, feriado-local-esquecido]
+tags: [prazos, dias-uteis, djen, feriados, cpc, clt]
+autor: sanfran
+licenca: MIT
+tribunais: [TJSP, TRT2, TRF3]
+depende_de: [feriados-forenses]
+base_normativa:
+  - ref: CPC, arts. 219, 220, 224, 231 e 1.003, § 6º
+    url: https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2015/lei/l13105.htm
+    conferido_em: 2026-10-17
+  - ref: Lei 11.419/2006, arts. 4º e 5º
+    url: https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2006/lei/l11419.htm
+    conferido_em: 2026-10-17
+  - ref: CLT, arts. 775 e 775-A
+    url: https://www.planalto.gov.br/ccivil_03/decreto-lei/del5452.htm
+    conferido_em: 2026-10-17
+  - ref: Lei 14.759/2023 (20 de novembro)
+    url: https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2023/lei/l14759.htm
+    conferido_em: 2026-10-17
+  - ref: Lei 5.010/1966, art. 62 (Justiça Federal)
+    url: https://www.planalto.gov.br/ccivil_03/leis/l5010.htm
+    conferido_em: 2026-10-17
+ferramentas_mcp:
+  - nome: calcular_prazo
+    entrypoint: scripts/prazo.py
+revisao:
+  status: rascunho
+  revisor: null
+  revisado_em: null
+qualidade:
+  testes_unitarios: tests/test_prazo.py
+  evals: evals/casos.jsonl
+  ultima_execucao: 2026-10-17
+  resultado: "9/9 testes unitários (14 gabaritos)"
+atualizado_em: 2026-10-17

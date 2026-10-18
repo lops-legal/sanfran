@@ -1,6 +1,8 @@
 import { MCP_TOOLS } from "./tools";
 import { REPO_SKILLS, getRepoSkill, reviewLabel, searchRepoSkills } from "../catalog";
 import { analisarCNJ, extrairCNJ } from "../motores/cnj";
+import { calcularPrazo, resumoPrazo, type EntradaPrazo } from "../motores/prazo";
+import { FERIADOS } from "../motores/feriados-data";
 import { SITE_URL } from "../site";
 
 /**
@@ -76,6 +78,27 @@ function callTool(name: string, args: Record<string, unknown>) {
       for (const s of REPO_SKILLS) areas[s.area] = (areas[s.area] ?? 0) + 1;
       const lista = Object.entries(areas).sort((a, b) => b[1] - a[1]).map(([area, total]) => ({ area, total }));
       return text(`${REPO_SKILLS.length} skills em ${lista.length} áreas:\n${lista.map((a) => `- ${a.area}: ${a.total}`).join("\n")}`, { areas: lista });
+    }
+    case "calcular_prazo": {
+      const lista = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
+      const entrada: EntradaPrazo = {
+        regime: str(args.regime, "regime").toLowerCase() as EntradaPrazo["regime"],
+        tribunal: str(args.tribunal, "tribunal"),
+        meio: str(args.meio, "meio").toLowerCase() as EntradaPrazo["meio"],
+        data: str(args.data, "data"),
+        dias: Number(args.dias),
+        consulta: str(args.consulta, "consulta", false) || null,
+        municipio: str(args.municipio, "municipio", false) || null,
+        uf: str(args.uf, "uf", false) || null,
+        em_dobro: args.em_dobro === true,
+        feriados_extras: lista(args.feriados_extras),
+      };
+      try {
+        const r = calcularPrazo(entrada, FERIADOS);
+        return text(resumoPrazo(r), r);
+      } catch (e) {
+        return text(`Não foi possível calcular: ${(e instanceof Error ? e.message : "entrada inválida").replace(/\.?$/, ".")}`, undefined, true);
+      }
     }
     case "validar_numero_cnj": {
       const numeros = Array.isArray(args.numeros) ? args.numeros.filter((n): n is string => typeof n === "string") : [];

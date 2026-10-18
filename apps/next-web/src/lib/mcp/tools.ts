@@ -95,4 +95,39 @@ export const MCP_TOOLS: McpToolDef[] = [
     },
     annotations: { title: "Validar número CNJ", ...READ_ONLY },
   },
+  {
+    name: "calcular_prazo",
+    label: "Calcular o vencimento de um prazo",
+    summary:
+      "Conta o prazo em dias úteis no CPC ou na CLT a partir da publicação no DJEN ou da intimação pelo portal, com feriados, recesso e a memória de cálculo dia a dia.",
+    description:
+      "Calcula o vencimento de prazo processual em dias úteis (CPC, art. 219; CLT, art. 775), com memória de cálculo dia a dia. " +
+      "Aplica: publicação no 1º dia útil após a disponibilização no DJEN/DJe e início no dia útil seguinte (Lei 11.419/2006, art. 4º); " +
+      "ciência ficta em 10 dias corridos no portal (art. 5º); suspensão de 20/12 a 20/01 (CPC, art. 220; CLT, art. 775-A); " +
+      "feriados nacionais (inclusive 20/11), estaduais, municipais e forenses (TJSP, TRT2, TRF3 na base). " +
+      "Use SEMPRE em vez de contar dias por conta própria. Mostre ao usuário o vencimento, a tabela da memória e TODOS os alertas; " +
+      "se houver cenário com calendário do tribunal, recomende protocolar até o vencimento principal (data segura).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        regime: { type: "string", enum: ["cpc", "clt"], description: "cpc (processo civil) ou clt (processo do trabalho)." },
+        tribunal: { type: "string", description: "Sigla do tribunal, ex.: TJSP, TRT2, TRF3. Outros funcionam só com feriados nacionais (com aviso)." },
+        meio: {
+          type: "string",
+          enum: ["djen", "portal", "intimacao"],
+          description: "djen = data de DISPONIBILIZAÇÃO no diário; portal = data de ENVIO da intimação eletrônica; intimacao = data em que a intimação se considera feita.",
+        },
+        data: { type: "string", description: "Data de referência do meio escolhido, no formato AAAA-MM-DD." },
+        dias: { type: "integer", minimum: 1, maximum: 365, description: "Quantidade de dias do prazo (ex.: 15 para contestar no CPC, 8 para recurso ordinário na CLT)." },
+        consulta: { type: "string", description: "Só para portal: data em que a intimação foi aberta (AAAA-MM-DD). Omitir se não foi aberta." },
+        municipio: { type: "string", description: "Comarca/município, para feriados municipais (ex.: São Paulo)." },
+        uf: { type: "string", description: "UF, quando o tribunal abrange mais de um estado (ex.: TRF3: SP ou MS)." },
+        em_dobro: { type: "boolean", description: "true quando o prazo é contado em dobro (Fazenda Pública, MP, Defensoria, litisconsortes em autos físicos)." },
+        feriados_extras: { type: "array", items: { type: "string" }, maxItems: 60, description: "Dias sem expediente já confirmados pelo usuário (AAAA-MM-DD)." },
+      },
+      required: ["regime", "tribunal", "meio", "data", "dias"],
+      additionalProperties: false,
+    },
+    annotations: { title: "Calcular prazo", ...READ_ONLY },
+  },
 ];
