@@ -28,7 +28,7 @@ function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
       nodes.push(
         <code
           key={`${keyPrefix}-c-${i++}`}
-          className="px-1.5 py-0.5 rounded bg-[#C9A84C]/15 border border-[#C9A84C]/20 text-[#C9A84C] text-[11px] font-mono"
+          className="px-1.5 py-0.5 rounded bg-subtle border border-border text-foreground text-[11px] font-mono"
         >
           {token.slice(1, -1)}
         </code>
@@ -42,7 +42,7 @@ function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
             href={m[2]}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[#C9A84C] hover:text-[#E0C060] underline underline-offset-2 decoration-[#C9A84C]/40"
+            className="text-foreground hover:text-foreground underline underline-offset-2 decoration-muted-foreground/40"
           >
             {m[1]}
           </a>
@@ -50,13 +50,13 @@ function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
       }
     } else if (token.startsWith("**")) {
       nodes.push(
-        <strong key={`${keyPrefix}-b-${i++}`} className="text-[#E8DDD0] font-semibold">
+        <strong key={`${keyPrefix}-b-${i++}`} className="text-foreground font-semibold">
           {token.slice(2, -2)}
         </strong>
       );
     } else if (token.startsWith("*")) {
       nodes.push(
-        <em key={`${keyPrefix}-i-${i++}`} className="text-[#C4B5A0] italic">
+        <em key={`${keyPrefix}-i-${i++}`} className="text-muted-foreground italic">
           {token.slice(1, -1)}
         </em>
       );
@@ -78,7 +78,7 @@ function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
 export function parseSkillMarkdown(raw: string): ParsedSkillMarkdown {
   if (!raw) return { frontmatter: {}, bodyNodes: [] };
 
-  let frontmatter: Record<string, string> = {};
+  const frontmatter: Record<string, string> = {};
   let body = raw;
 
   const fmMatch = raw.match(/^---\s*\n([\s\S]*?)\n---\s*\n?/);
@@ -105,7 +105,7 @@ export function parseSkillMarkdown(raw: string): ParsedSkillMarkdown {
     const text = paraBuffer.join(" ").trim();
     if (text) {
       nodes.push(
-        <p key={key} className="text-sm text-[#C4B5A0] leading-relaxed mb-3 font-sans">
+        <p key={key} className="text-[15px] text-foreground/85 leading-relaxed mb-4">
           {renderInline(text, key)}
         </p>
       );
@@ -121,16 +121,16 @@ export function parseSkillMarkdown(raw: string): ParsedSkillMarkdown {
       nodes.push(
         <ul key={key} className="space-y-1.5 mb-4 list-none">
           {listBuffer.map((item, idx) => (
-            <li key={`${key}-${idx}`} className="flex items-start gap-2 text-sm">
+            <li key={`${key}-${idx}`} className="flex items-start gap-2 text-[15px]">
               <span
                 className={`mt-0.5 flex items-center justify-center w-4 h-4 rounded-sm border shrink-0 text-[10px] font-bold ${item.checked
                   ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400"
-                  : "border-[#5D4432]/40 text-transparent"
+                  : "border-border text-transparent"
                   }`}
               >
                 {item.checked ? "\u2713" : ""}
               </span>
-              <span className={`leading-relaxed ${item.checked ? "text-[#8B7D6B] line-through" : "text-[#C4B5A0]"}`}>
+              <span className={`leading-relaxed ${item.checked ? "text-muted-foreground line-through" : "text-foreground/85"}`}>
                 {renderInline(item.text, `${key}-${idx}`)}
               </span>
             </li>
@@ -141,8 +141,8 @@ export function parseSkillMarkdown(raw: string): ParsedSkillMarkdown {
       nodes.push(
         <ol key={key} className="space-y-1.5 mb-4 pl-1">
           {listBuffer.map((item, idx) => (
-            <li key={`${key}-${idx}`} className="flex gap-2.5 text-sm text-[#C4B5A0] leading-relaxed">
-              <span className="font-mono text-[#C9A84C]/80 text-xs mt-0.5 shrink-0">
+            <li key={`${key}-${idx}`} className="flex gap-2.5 text-[15px] text-foreground/85 leading-relaxed">
+              <span className="font-mono text-muted-foreground text-xs mt-0.5 shrink-0">
                 {String(idx + 1).padStart(2, "0")}
               </span>
               <span>{renderInline(item.text, `${key}-${idx}`)}</span>
@@ -154,8 +154,8 @@ export function parseSkillMarkdown(raw: string): ParsedSkillMarkdown {
       nodes.push(
         <ul key={key} className="space-y-1.5 mb-4 pl-1">
           {listBuffer.map((item, idx) => (
-            <li key={`${key}-${idx}`} className="flex gap-2.5 text-sm text-[#C4B5A0] leading-relaxed">
-              <span className="text-[#C9A84C] mt-1.5 text-[8px] shrink-0">&bull;</span>
+            <li key={`${key}-${idx}`} className="flex gap-2.5 text-[15px] text-foreground/85 leading-relaxed">
+              <span className="text-muted-foreground mt-2 text-[8px] shrink-0">&bull;</span>
               <span>{renderInline(item.text, `${key}-${idx}`)}</span>
             </li>
           ))}
@@ -181,18 +181,72 @@ export function parseSkillMarkdown(raw: string): ParsedSkillMarkdown {
         i++;
       }
       nodes.push(
-        <div key={`code-${i}`} className="mb-4 rounded-lg overflow-hidden border border-[#3D3226] bg-[#1E180F]">
+        <div key={`code-${i}`} className="mb-4 rounded-lg overflow-hidden border border-white/10 bg-neutral-950">
           {lang && (
-            <div className="px-3 py-1 text-[10px] font-mono text-[#8B7D6B] border-b border-[#3D3226] uppercase tracking-wider">
+            <div className="px-3 py-1 text-[10px] font-mono text-neutral-400 border-b border-white/10 uppercase tracking-wider">
               {lang}
             </div>
           )}
-          <pre className="p-3 overflow-x-auto text-[11px] font-mono text-[#C9A84C] leading-relaxed">
+          <pre className="p-3 overflow-x-auto text-[12px] font-mono text-neutral-200 leading-relaxed">
             <code>{codeLines.join("\n")}</code>
           </pre>
         </div>
       );
       i++;
+      continue;
+    }
+
+    // Tabela (GFM)
+    if (/^\s*\|.*\|\s*$/.test(line) && i + 1 < lines.length && /^\s*\|?\s*:?-{2,}/.test(lines[i + 1])) {
+      flushPara(`p-${i}`);
+      flushList(`l-${i}`);
+      const cells = (l: string) => l.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
+      const head = cells(line);
+      const rows: string[][] = [];
+      i += 2;
+      while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) {
+        rows.push(cells(lines[i]));
+        i++;
+      }
+      nodes.push(
+        <div key={`t-${i}`} className="mb-5 overflow-x-auto rounded-lg border border-border">
+          <table className="w-full text-sm">
+            <thead className="bg-subtle/60">
+              <tr>
+                {head.map((h, k) => (
+                  <th key={k} className="px-3 py-2 text-left font-medium whitespace-nowrap">{renderInline(h, `th-${i}-${k}`)}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {rows.map((r, ri) => (
+                <tr key={ri}>
+                  {r.map((c, k) => (
+                    <td key={k} className="px-3 py-2 align-top text-foreground/85">{renderInline(c, `td-${i}-${ri}-${k}`)}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+      continue;
+    }
+
+    // Citação
+    if (/^>\s?/.test(line)) {
+      flushPara(`p-${i}`);
+      flushList(`l-${i}`);
+      const quote: string[] = [];
+      while (i < lines.length && /^>\s?/.test(lines[i])) {
+        quote.push(lines[i].replace(/^>\s?/, ""));
+        i++;
+      }
+      nodes.push(
+        <blockquote key={`q-${i}`} className="mb-4 border-l-2 border-border pl-4 text-[15px] text-muted-foreground">
+          {renderInline(quote.join(" "), `q-${i}`)}
+        </blockquote>
+      );
       continue;
     }
 
@@ -208,7 +262,7 @@ export function parseSkillMarkdown(raw: string): ParsedSkillMarkdown {
         nodes.push(
           <h2
             key={`h-${i}`}
-            className="text-lg font-bold text-[#E8DDD0] mt-6 mb-3 pb-2 border-b border-[#3D3226] first:mt-0 font-sans tracking-tight"
+            className="text-2xl font-semibold mt-8 mb-4 first:mt-0 tracking-tight"
           >
             {renderInline(text, `h-${i}`)}
           </h2>
@@ -217,15 +271,14 @@ export function parseSkillMarkdown(raw: string): ParsedSkillMarkdown {
         nodes.push(
           <h3
             key={`h-${i}`}
-            className="flex items-center gap-2 text-sm font-bold text-[#C9A84C] uppercase tracking-wider mt-5 mb-2.5 font-mono"
+            className="text-xl font-semibold mt-8 mb-3 tracking-tight"
           >
-            <span className="w-1 h-3.5 bg-[#C9A84C] rounded-full shrink-0" />
             {renderInline(text, `h-${i}`)}
           </h3>
         );
       } else {
         nodes.push(
-          <h4 key={`h-${i}`} className="text-xs font-bold text-[#E8DDD0] uppercase tracking-wide mt-4 mb-2 font-mono">
+          <h4 key={`h-${i}`} className="text-base font-semibold mt-6 mb-2">
             {renderInline(text, `h-${i}`)}
           </h4>
         );
@@ -238,7 +291,7 @@ export function parseSkillMarkdown(raw: string): ParsedSkillMarkdown {
     if (/^(---|\*\*\*)\s*$/.test(line.trim())) {
       flushPara(`p-${i}`);
       flushList(`l-${i}`);
-      nodes.push(<hr key={`hr-${i}`} className="border-t border-[#3D3226] my-5" />);
+      nodes.push(<hr key={`hr-${i}`} className="border-t border-border my-6" />);
       i++;
       continue;
     }

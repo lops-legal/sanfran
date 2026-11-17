@@ -1,326 +1,218 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import OverviewSection from "./OverviewSection";
-import QualitySection from "./QualitySection";
-import SecuritySection from "./SecuritySection";
-import IntegrationSection from "./IntegrationSection";
+import React, { useState } from "react";
+import Link from "next/link";
 import SkillMarkdownCard from "./SkillMarkdownCard";
 import { LegalSkill } from "../../lib/types";
 import { useAuth } from "../../contexts/AuthContext";
 import { useUserLibrary } from "../../contexts/UserLibraryContext";
 import { toast } from "../Toast";
 import AuthModal from "../AuthModal";
-import { useRouter } from "next/navigation";
-import { useInView } from "../../hooks/useInView";
-import { Dock, DockIcon, DockItem, DockLabel } from "../ui/dock";
-import {
-  ArrowLeft,
-  Trash2,
-  Edit,
-  LayoutGrid,
-  Gauge,
-  ShieldCheck,
-  Plug,
-  ChevronRight,
-  Download,
-  Star,
-  Loader2,
-} from "lucide-react";
-
-// Import cinematic styles
-import "../../styles/home-cinematic.css";
+import { ReviewBadge, SKILL_TYPE_LABEL } from "../ReviewBadge";
+import { ArrowLeft, Check, ClipboardCopy, Download, ExternalLink, FileText, Folder, Link2, Plug, Star } from "lucide-react";
 
 interface SkillDetailPageProps {
   skill: LegalSkill;
   onBack: () => void;
 }
 
-const SECTIONS = [
-  { id: "overview", label: "Visão Geral", icon: LayoutGrid },
-  { id: "quality", label: "Qualidade", icon: Gauge },
-  { id: "security", label: "Segurança", icon: ShieldCheck },
-  { id: "integration", label: "Como Usar", icon: Plug },
-] as const;
+function formatDate(iso: string) {
+  const d = new Date(iso.length === 10 ? `${iso}T12:00:00` : iso);
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+}
 
-export default function SkillDetailPage({ skill: initialSkill, onBack }: SkillDetailPageProps) {
-  const [skill, setSkill] = useState<LegalSkill>(initialSkill);
-  const [loadingDetails, setLoadingDetails] = useState(!initialSkill.markdownContent);
+function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-4 py-2 text-sm">
+      <span className="text-muted-foreground shrink-0">{label}</span>
+      <span className="text-right min-w-0">{children}</span>
+    </div>
+  );
+}
+
+export default function SkillDetailPage({ skill, onBack }: SkillDetailPageProps) {
   const [starring, setStarring] = useState(false);
-  const [downloading, setDownloading] = useState(false);
+  const [copied, setCopied] = useState<"skill" | "link" | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { user } = useAuth();
   const { isStarred, toggleStar, recordDownload } = useUserLibrary();
-  const router = useRouter();
-
   const starred = isStarred(skill.id);
+  const slug = skill.slug ?? skill.id;
 
-  const [activeSection, setActiveSection] = useState<string>("overview");
+  const flash = (what: "skill" | "link") => {
+    setCopied(what);
+    setTimeout(() => setCopied(null), 1500);
+  };
 
-  const { ref: heroRef, inView: heroInView } = useInView<HTMLDivElement>({ threshold: 0.1 });
-
-  useEffect(() => {
-    // If we're fetching from a Next.js Server Component, it should pass the FULL skill down.
-    // So we don't strictly need to fetch here, but let's keep the fallback
-    setLoadingDetails(false);
-    setSkill(initialSkill);
-  }, [initialSkill]);
-
-  const handleDelete = async () => {
-    if (!window.confirm("Tem certeza que deseja excluir permanentemente esta skill?")) return;
+  const copySkill = async () => {
     try {
-      // In a full implementation, you'd call a Next.js Server Action or API Route here
-      alert("A exclusão deve ser feita via API Route no Next.js.");
-    } catch (err: any) {
-      alert("Erro ao excluir skill: " + err.message);
+      await navigator.clipboard.writeText(skill.markdownContent || "");
+      flash("skill");
+      toast.success("Skill copiada", "Cole no início da conversa com o seu assistente e depois descreva o caso.");
+    } catch {
+      toast.error("Não foi possível copiar", "Selecione o texto da skill e copie manualmente.");
+    }
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/skills/${slug}.md`);
+      flash("link");
+    } catch {}
+  };
+
+  const download = async () => {
+    if (!skill.markdownContent) return;
+    const blob = new Blob([skill.markdownContent], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${slug}.SKILL.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+    if (user) {
+      try {
+        await recordDownload(skill.id);
+      } catch {}
     }
   };
 
   const handleToggleStar = async () => {
-    if (!user) {
-      setShowAuthModal(true);
-      return;
-    }
+    if (!user) return setShowAuthModal(true);
     setStarring(true);
     try {
-      const nowStarred = await toggleStar(skill.id);
-      setSkill((prev) => ({
-        ...prev,
-        starsCount: Math.max(0, (prev.starsCount ?? 0) + (nowStarred ? 1 : -1)),
-      }));
+      await toggleStar(skill.id);
     } catch (err: unknown) {
-      toast.error("Erro ao favoritar", err instanceof Error ? err.message : "Tente novamente.");
+      toast.error("Erro ao salvar", err instanceof Error ? err.message : "Tente novamente.");
     } finally {
       setStarring(false);
     }
   };
 
-  const handleDownload = async () => {
-    if (!skill.markdownContent) {
-      if (user) {
-        try {
-          await recordDownload(skill.id);
-        } catch {
-          // silencioso: sem conteudo real, apenas registra
-        }
-      }
-      return;
-    }
-
-    setDownloading(true);
-    try {
-      // Dispara o download do SKILL.md
-      const blob = new Blob([skill.markdownContent], { type: "text/markdown;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${skill.slug ?? skill.id}.SKILL.md`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      // Registra o download na conta (só se logado)
-      if (user) {
-        await recordDownload(skill.id);
-        toast.success("Download registrado", "A skill foi adicionada aos seus downloads.");
-      }
-    } catch (err: unknown) {
-      toast.error("Não foi possível registrar o download", err instanceof Error ? err.message : "Tente novamente.");
-    } finally {
-      setDownloading(false);
-    }
-  };
-
-  const downloadsLabel = (skill.downloadsCount ?? skill.starsCount) >= 1000
-    ? `${((skill.downloadsCount ?? skill.starsCount) / 1000).toFixed(1)}k`
-    : String(skill.downloadsCount ?? skill.starsCount);
+  const files = skill.files?.length ? skill.files : ["SKILL.md"];
 
   return (
-    <div id={`detail-page-${skill.id}`} className="min-h-screen bg-background text-foreground font-sans animate-fade-in">
+    <div className="max-w-6xl mx-auto w-full px-4 py-10 md:py-14">
+      <button onClick={onBack} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8">
+        <ArrowLeft className="w-4 h-4" />
+        Skills
+      </button>
 
-      {/* Breadcrumb + Hero */}
-      <div className="paper-texture paper-seda" style={{ background: "linear-gradient(180deg, #fff8f5 0%, #F9F7F5 100%)" }}>
-        <div className="max-w-7xl mx-auto px-margin-desktop pt-20 md:pt-24 lg:pt-[100px] pb-8">
-          <nav className="flex items-center gap-1.5 mb-6 min-w-0">
-            <button onClick={onBack} className="breadcrumb-link hover:text-primary flex items-center gap-1 transition-colors shrink-0">
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Catálogo
+      <header className="space-y-4 mb-10 max-w-3xl">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-mono uppercase tracking-wide text-muted-foreground">{skill.vertical}</span>
+          {skill.tags.slice(0, 4).map((t) => (
+            <span key={t} className="text-xs font-mono uppercase tracking-wide text-muted-foreground">· {t}</span>
+          ))}
+        </div>
+        <h1 className="text-3xl md:text-4xl font-semibold tracking-tight leading-tight">{skill.name}</h1>
+        <p className="text-sm text-muted-foreground">
+          {skill.ownerName} · {formatDate(skill.updatedAt)}
+        </p>
+        <p className="text-base leading-relaxed">{skill.description}</p>
+      </header>
+
+      <div className="grid gap-10 lg:grid-cols-[1fr_320px]">
+        {/* Conteúdo */}
+        <div className="min-w-0 space-y-8">
+
+          {skill.reviewStatus && skill.reviewStatus !== "revisada" && (
+            <div className="rounded-lg border border-border bg-subtle/50 p-4 text-sm text-muted-foreground">
+              <b className="text-foreground font-medium">Ainda sem revisão jurídica final.</b> Use como apoio e confira a
+              fundamentação antes de usar o resultado em um caso real.
+            </div>
+          )}
+
+          <section className="space-y-3">
+            <h2 className="text-xs font-sans font-medium uppercase tracking-wider text-muted-foreground">O que está incluído</h2>
+            <div className="rounded-lg border border-border bg-card p-4 font-mono text-sm space-y-1.5">
+              <div className="flex items-center gap-2">
+                <Folder className="w-4 h-4 text-muted-foreground" aria-hidden />
+                {slug}/
+              </div>
+              {files.map((f) => (
+                <div key={f} className="flex items-center gap-2 pl-6 text-muted-foreground">
+                  <FileText className="w-3.5 h-3.5" aria-hidden />
+                  {f}
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <SkillMarkdownCard skill={skill} />
+        </div>
+
+        {/* Painel lateral */}
+        <aside className="space-y-4 order-first lg:order-none lg:sticky lg:top-24 self-start">
+          <div className="rounded-lg border border-border bg-card p-5 space-y-3">
+            <p className="text-sm font-medium">Usar esta skill</p>
+            <button
+              onClick={copySkill}
+              className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              {copied === "skill" ? <Check className="w-4 h-4" /> : <ClipboardCopy className="w-4 h-4" />}
+              {copied === "skill" ? "Copiada" : "Copiar skill"}
             </button>
-            <ChevronRight className="w-3 h-3 text-muted shrink-0" />
-            <span className="text-[12px] font-mono text-muted shrink-0">{skill.vertical}</span>
-            <ChevronRight className="w-3 h-3 text-muted shrink-0" />
-            <span className="text-[12px] font-mono text-foreground font-medium truncate max-w-[120px] sm:max-w-[200px]">{skill.name}</span>
-          </nav>
-
-          <div ref={heroRef} className="flex flex-col lg:flex-row items-start justify-between gap-8">
-            <div className={`flex-1 min-w-0 transition-all duration-700 transform ${heroInView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}>
-              <div className="flex items-center gap-2 mb-4 flex-wrap">
-                <span className="pill-tag bg-primary/8 text-primary border border-primary/20">
-                  {skill.vertical}
-                </span>
-                <span className="text-[11px] text-muted font-mono">v{skill.version}</span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-serif max-w-3xl leading-tight mb-3">
-                {skill.name}
-              </h1>
-              <p className="text-muted text-sm max-w-2xl leading-relaxed">
-                {skill.description}
-              </p>
-              <p className="text-muted text-xs mt-3 font-mono">
-                Mantido por <span className="text-foreground font-semibold">@{skill.ownerName}</span> &middot; Atualizado em {skill.updatedAt}
-              </p>
-            </div>
-
-            <div className={`shrink-0 w-full lg:w-auto flex flex-col gap-4 transition-all duration-700 delay-200 transform ${heroInView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}>
-              <div className="grid grid-cols-3 gap-2 sm:gap-4 bg-white border border-border rounded-xl p-3 sm:p-4 shadow-sm">
-                <div className="text-center min-w-0">
-                  <span className="text-[9px] sm:text-[10px] font-mono text-muted uppercase tracking-wider block mb-1">Downloads</span>
-                  <span className="text-sm sm:text-lg font-bold text-foreground font-mono">{downloadsLabel}</span>
-                </div>
-                <div className="text-center min-w-0 border-x border-border px-1">
-                  <span className="text-[9px] sm:text-[10px] font-mono text-muted uppercase tracking-wider block mb-1">Score</span>
-                  <span className="text-sm sm:text-lg font-bold text-foreground font-mono">{skill.qualityScore}%</span>
-                </div>
-                <div className="text-center min-w-0">
-                  <span className="text-[9px] sm:text-[10px] font-mono text-muted uppercase tracking-wider block mb-1">Rating</span>
-                  <span className="text-sm sm:text-lg font-bold text-foreground font-mono flex items-center justify-center gap-1">
-                    <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-amber-400 stroke-amber-400" />
-                    {skill.rating.toFixed(1)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  onClick={handleToggleStar}
-                  disabled={starring}
-                  title={user ? (starred ? "Remover dos favoritos" : "Favoritar") : "Entre para favoritar"}
-                  className={`flex items-center gap-1.5 px-4 py-2 text-xs font-mono rounded-lg border transition-all disabled:opacity-60 ${
-                    starred
-                      ? "bg-amber-50 text-amber-600 border-amber-300"
-                      : "text-foreground bg-white hover:bg-card border-border"
-                  }`}
-                >
-                  {starring ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Star className={`w-3.5 h-3.5 ${starred ? "fill-amber-400 stroke-amber-400" : ""}`} />
-                  )}
-                  {starred ? "Favoritada" : "Favoritar"}
-                </button>
-
-                <button
-                  onClick={handleDownload}
-                  disabled={downloading}
-                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-mono text-white bg-primary hover:bg-primary-dim rounded-lg transition-all disabled:opacity-60"
-                >
-                  {downloading ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Download className="w-3.5 h-3.5" />
-                  )}
-                  Baixar
-                </button>
-
-                {user && (
-                  <>
-                    <button
-                      onClick={() => alert("Funcionalidade de edição em desenvolvimento.")}
-                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-mono text-foreground bg-white hover:bg-card border border-border rounded-lg transition-all"
-                    >
-                      <Edit className="w-3.5 h-3.5" />
-                      Editar
-                    </button>
-                    <button
-                      onClick={handleDelete}
-                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-mono text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition-all"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      Excluir
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main grid */}
-      <div className="max-w-7xl mx-auto px-margin-desktop py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-
-          {/* LEFT: Nav tabs + active section */}
-          <div className="lg:col-span-5 space-y-6 order-2 lg:order-1">
-            {/* Tab navigation — Apple-style Dock */}
-            <Dock className="items-end pb-3 bg-card/90 border border-border shadow-md">
-              {SECTIONS.map(({ id, label, icon: Icon }) => {
-                const isActive = activeSection === id;
-                return (
-                  <DockItem
-                    key={id}
-                    onClick={() => setActiveSection(id)}
-                    className={`aspect-square rounded-full ${isActive ? "bg-primary/15 ring-2 ring-primary/30" : "bg-card-hover"}`}
-                  >
-                    <DockLabel>{label}</DockLabel>
-                    <DockIcon>
-                      <Icon className={`w-5 h-5 ${isActive ? "text-primary" : "text-muted"}`} />
-                    </DockIcon>
-                  </DockItem>
-                );
-              })}
-            </Dock>
-
-            {/* Active section (only one rendered at a time) */}
-            <div key={activeSection} className="tab-content-enter">
-              {activeSection === "overview" && (
-                <section className="detail-section-card">
-                  <h3 className="text-sm font-bold text-foreground uppercase tracking-wider font-mono mb-5 flex items-center gap-2">
-                    <LayoutGrid className="w-4 h-4 text-primary" />
-                    Visão Geral
-                  </h3>
-                  <OverviewSection skill={skill} />
-                </section>
-              )}
-              {activeSection === "quality" && (
-                <section className="detail-section-card">
-                  <h3 className="text-sm font-bold text-foreground uppercase tracking-wider font-mono mb-5 flex items-center gap-2">
-                    <Gauge className="w-4 h-4 text-primary" />
-                    Qualidade
-                  </h3>
-                  <QualitySection skill={skill} />
-                </section>
-              )}
-              {activeSection === "security" && (
-                <section className="detail-section-card">
-                  <h3 className="text-sm font-bold text-foreground uppercase tracking-wider font-mono mb-5 flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-primary" />
-                    Segurança & Vetores de Risco
-                  </h3>
-                  <SecuritySection skill={skill} />
-                </section>
-              )}
-              {activeSection === "integration" && (
-                <section className="detail-section-card">
-                  <h3 className="text-sm font-bold text-foreground uppercase tracking-wider font-mono mb-1.5 flex items-center gap-2">
-                    <Plug className="w-4 h-4 text-primary" />
-                    Como Usar
-                  </h3>
-                  <p className="text-xs text-muted mb-5">
-                    Conecte esta skill jurídica ao seu ecossistema de IA preferido.
-                  </p>
-                  <IntegrationSection />
-                </section>
-              )}
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Cole no início da conversa no Claude, ChatGPT, Grok ou Manus e depois descreva o caso.
+            </p>
+            <Link
+              href="/integrate"
+              className="w-full inline-flex items-center justify-center gap-2 h-9 rounded-full border border-border bg-foreground/[0.045] hover:bg-foreground/10 text-sm font-medium transition-colors"
+            >
+              <Plug className="w-4 h-4" />
+              Conectar ao assistente
+            </Link>
+            <div className="grid grid-cols-3 gap-2 pt-1">
+              <button onClick={download} className="inline-flex flex-col items-center gap-1 py-2 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-subtle transition-colors">
+                <Download className="w-4 h-4" />
+                Baixar
+              </button>
+              <button onClick={copyLink} className="inline-flex flex-col items-center gap-1 py-2 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-subtle transition-colors">
+                {copied === "link" ? <Check className="w-4 h-4" /> : <Link2 className="w-4 h-4" />}
+                {copied === "link" ? "Copiado" : "Link .md"}
+              </button>
+              <button
+                onClick={handleToggleStar}
+                disabled={starring}
+                className="inline-flex flex-col items-center gap-1 py-2 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-subtle transition-colors disabled:opacity-50"
+              >
+                <Star className={`w-4 h-4 ${starred ? "fill-current text-foreground" : ""}`} />
+                {starred ? "Salva" : "Salvar"}
+              </button>
             </div>
           </div>
 
-          {/* RIGHT: SKILL.md — first on mobile */}
-          <div className="lg:col-span-7 lg:sticky lg:top-[72px] self-start order-1 lg:order-2">
-            <SkillMarkdownCard skill={skill} loading={loadingDetails} />
+          <div className="rounded-lg border border-border bg-card px-5 py-3 divide-y divide-border">
+            <DetailRow label="Revisão"><ReviewBadge skill={skill} /></DetailRow>
+            {skill.skillType && <DetailRow label="Tipo">{SKILL_TYPE_LABEL[skill.skillType]}</DetailRow>}
+            <DetailRow label="Área">{skill.vertical}</DetailRow>
+            <DetailRow label="Versão">{skill.version}</DetailRow>
+            <DetailRow label="Autor">{skill.ownerName}</DetailRow>
+            <DetailRow label="Atualizada">{formatDate(skill.updatedAt)}</DetailRow>
           </div>
-        </div>
+
+          {skill.legalBasis && skill.legalBasis.length > 0 && (
+            <div className="rounded-lg border border-border bg-card p-5 space-y-3">
+              <p className="text-sm font-medium">Base normativa</p>
+              <ul className="space-y-2.5">
+                {skill.legalBasis.map((b) => (
+                  <li key={b.ref} className="text-sm">
+                    {b.url ? (
+                      <a href={b.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-start gap-1.5 hover:underline underline-offset-2">
+                        {b.ref}
+                        <ExternalLink className="w-3 h-3 mt-1 shrink-0 text-muted-foreground" aria-hidden />
+                      </a>
+                    ) : (
+                      b.ref
+                    )}
+                    {b.checkedAt && <span className="block text-xs text-muted-foreground">Conferido em {formatDate(b.checkedAt)}</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </aside>
       </div>
 
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />

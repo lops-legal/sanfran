@@ -1,0 +1,47 @@
+slug: qual-recurso-cabe
+titulo: Qual recurso cabe e em que prazo
+versao: 1.0.0
+tipo: conhecimento
+area: Processual
+personas:
+  - advogado-contencioso
+  - estagiario
+dores:
+  - duvida-de-cabimento
+  - recurso-nao-conhecido
+tags:
+  - recursos
+  - agravo
+  - apelacao
+  - prazos
+autor: sanfran
+licenca: MIT
+depende_de:
+  - calcular-prazo
+base_normativa:
+  - ref: CPC, arts. 203, 1.001, 1.003, 1.007, 1.009 a 1.029 e 1.042
+    url: https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2015/lei/l13105.htm
+    conferido_em: null
+  - ref: Lei 9.099/1995, arts. 41 a 49
+    url: https://www.planalto.gov.br/ccivil_03/leis/l9099.htm
+    conferido_em: null
+  - ref: CLT, arts. 893, 895, 896, 897, 897-A e 899
+    url: https://www.planalto.gov.br/ccivil_03/decreto-lei/del5452.htm
+    conferido_em: null
+  - ref: Lei 5.584/1970, art. 6º
+    url: https://www.planalto.gov.br/ccivil_03/leis/l5584.htm
+    conferido_em: null
+  - ref: Tema 988/STJ (taxatividade mitigada do art. 1.015)
+    url: null
+    conferido_em: null
+  - ref: Súmula 214/TST
+    url: null
+    conferido_em: null
+revisao:
+  status: rascunho
+  revisor: null
+  revisado_em: null
+qualidade:
+  evals: evals/casos.jsonl
+  casos: 5
+atualizado_em: 2026-10-17

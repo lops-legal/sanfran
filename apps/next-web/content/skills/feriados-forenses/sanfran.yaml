@@ -1,0 +1,29 @@
+slug: feriados-forenses
+titulo: Feriados e dias sem expediente forense
+versao: 1.0.0
+tipo: motor
+area: Processual
+personas: [advogado-contencioso, estagiario, paralegal, legal-ops]
+dores: [feriado-local-esquecido, perder-prazo]
+tags: [feriados, expediente, recesso, prazos]
+autor: sanfran
+licenca: MIT
+tribunais: [TJSP, TRT2, TRF3]
+base_normativa:
+  - ref: Lei 662/1949 (red. Lei 10.607/2002) e Lei 6.802/1980
+    url: https://www.planalto.gov.br/ccivil_03/leis/l0662.htm
+    conferido_em: 2026-10-17
+  - ref: Lei 14.759/2023 (20 de novembro)
+    url: https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2023/lei/l14759.htm
+    conferido_em: 2026-10-17
+  - ref: Lei 9.093/1995 (feriados civis e religiosos)
+    url: https://www.planalto.gov.br/ccivil_03/leis/l9093.htm
+    conferido_em: 2026-10-17
+  - ref: Lei 5.010/1966, art. 62 (Justiça Federal)
+    url: https://www.planalto.gov.br/ccivil_03/leis/l5010.htm
+    conferido_em: 2026-10-17
+revisao:
+  status: rascunho
+  revisor: null
+  revisado_em: null
+atualizado_em: 2026-10-17

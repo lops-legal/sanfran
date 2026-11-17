@@ -1,0 +1,55 @@
+name: "CI Pipeline"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    name: Build & Lint
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '24'
+        cache: 'npm'
+        cache-dependency-path: apps/next-web/package-lock.json
+
+    - name: Install dependencies
+      working-directory: ./apps/next-web
+      run: npm ci
+
+    - name: Lint
+      working-directory: ./apps/next-web
+      run: npm run lint
+
+    - name: Testes dos motores (TypeScript)
+      working-directory: ./apps/next-web
+      run: npm test
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Testes dos scripts das skills (Python)
+      working-directory: ./apps/next-web/content/skills
+      run: |
+        for d in */tests; do
+          echo "== $d"
+          (cd "$(dirname "$d")" && python -m unittest discover -s tests)
+        done
+
+    - name: Build
+      working-directory: ./apps/next-web
+      run: npm run build
+      env:
+        NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}

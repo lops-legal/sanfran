@@ -1,0 +1,27 @@
+slug: contingencia-report
+titulo: Relatório de Contingência Jurídica
+versao: 1.0.0
+tipo: execucao
+area: Gestão Jurídica
+personas:
+  - controller
+  - compliance
+  - CFO
+  - auditor
+tags:
+  - contingência
+  - provisão
+  - passivo
+  - IAS37
+  - CPC25
+  - auditoria
+  - balanço
+autor: autodev-tecnologia
+origem: github.com/lops-legal/skills-teste-docker
+licenca: MIT
+base_normativa: []
+revisao:
+  status: em-revisao
+  revisor: null
+  revisado_em: null
+atualizado_em: 2026-10-17

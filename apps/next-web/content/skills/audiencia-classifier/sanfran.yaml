@@ -1,0 +1,24 @@
+slug: audiencia-classifier
+titulo: Classificador de Audiências Judiciais
+versao: 1.0.0
+tipo: execucao
+area: Processual
+personas:
+  - analista
+  - legal-ops
+  - advogado
+tags:
+  - audiência
+  - classificação
+  - intimação
+  - pauta
+  - diário-justiça
+autor: autodev-tecnologia
+origem: github.com/lops-legal/skills-teste-docker
+licenca: MIT
+base_normativa: []
+revisao:
+  status: em-revisao
+  revisor: null
+  revisado_em: null
+atualizado_em: 2026-10-17

@@ -10,12 +10,12 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   /** Callback to prepend the newly created skill */
-  onSkillCreated: (skill: LegalSkill) => void;
+  onSuccess: (skill: LegalSkill) => void;
   /** Authenticated user ID */
-  currentUserId: string;
+  currentUserId?: string;
 }
 
-export default function CreateSkillModal({ isOpen, onClose, onSkillCreated, currentUserId }: Props) {
+export default function CreateSkillModal({ isOpen, onClose, onSuccess, currentUserId }: Props) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [vertical, setVertical] = useState("Consumidor");
@@ -51,7 +51,7 @@ export default function CreateSkillModal({ isOpen, onClose, onSkillCreated, curr
         description,
         markdownContent: markdown,
         version: "1.0.0",
-        author_id: currentUserId,
+        author_id: currentUserId || "",
         ownerAvatar: "⚖️",
         vertical,
         tags: parsedTags,
@@ -63,7 +63,7 @@ export default function CreateSkillModal({ isOpen, onClose, onSkillCreated, curr
         rating: 0,
       });
       if (newSkill) {
-        onSkillCreated(newSkill);
+        onSuccess(newSkill);
         setName("");
         setDescription("");
         setVertical("Consumidor");

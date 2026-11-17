@@ -1,0 +1,33 @@
+slug: revisao-formal-peca
+titulo: Revisão formal da peça antes do protocolo
+versao: 1.0.0
+tipo: execucao
+area: Processual
+personas:
+  - estagiario
+  - advogado-contencioso
+dores:
+  - peca-devolvida-por-erro-formal
+  - emenda-a-inicial
+tags:
+  - peticao-inicial
+  - contestacao
+  - recursos
+  - checklist
+autor: sanfran
+licenca: MIT
+depende_de:
+  - cnj-numero
+  - calcular-prazo
+base_normativa:
+  - ref: CPC, arts. 99, 104, 287, 291, 292, 319, 320, 322, 324, 335 a 343, 1.007, 1.010 e 1.015 a 1.022
+    url: https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2015/lei/l13105.htm
+    conferido_em: null
+revisao:
+  status: rascunho
+  revisor: null
+  revisado_em: null
+qualidade:
+  evals: evals/casos.jsonl
+  casos: 8
+atualizado_em: 2026-10-17

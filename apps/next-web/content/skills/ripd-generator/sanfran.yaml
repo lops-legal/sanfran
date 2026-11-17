@@ -1,0 +1,24 @@
+slug: ripd-generator
+titulo: Geração de RIPD (Relatório de Impacto à Proteção de Dados)
+versao: 1.0.0
+tipo: execucao
+area: LGPD
+personas:
+  - advogado-consultivo
+  - legal-ops
+  - controller
+tags:
+  - lgpd
+  - ripd
+  - privacidade
+  - compliance
+  - protecao-de-dados
+autor: autodev-tecnologia
+origem: github.com/lops-legal/skills-teste-docker
+licenca: MIT
+base_normativa: []
+revisao:
+  status: em-revisao
+  revisor: null
+  revisado_em: null
+atualizado_em: 2026-10-17

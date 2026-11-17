@@ -9,4 +9,4 @@ banco/skills/
 node_modules/
 
 # MCP local development servers
-MCP/
+/MCP/

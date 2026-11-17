@@ -19,12 +19,13 @@ export function createMockAdapter(allSkills: LegalSkill[]): SkillDataAdapter {
 
 interface UseInfiniteSkillsArgs {
     search: string;
-    vertical: string | null;
-    taskCategory: string | null;
-    minQualityScore: number;
+    vertical?: string | null;
+    taskCategory?: string | null;
+    minQualityScore?: number;
     sortBy: SortOption;
     pageSize?: number;
     searchDebounceMs?: number;
+    initialData?: { skills: LegalSkill[]; total: number; nextCursor: number | null };
 }
 
 interface UseInfiniteSkillsResult {
@@ -41,20 +42,28 @@ interface UseInfiniteSkillsResult {
 
 export function useInfiniteSkills({
     search,
-    vertical,
-    taskCategory,
-    minQualityScore,
+    vertical = null,
+    taskCategory = null,
+    minQualityScore = 0,
     sortBy,
     pageSize = 12,
     searchDebounceMs = 350,
+    initialData,
 }: UseInfiniteSkillsArgs): UseInfiniteSkillsResult {
     const [debouncedSearch, setDebouncedSearch] = useState(search);
-    const [items, setItems] = useState<LegalSkill[]>([]);
-    const [cursor, setCursor] = useState<number | null>(null);
-    const [totalCount, setTotalCount] = useState(0);
-    const [isLoading, setIsLoading] = useState(true);
+    
+    // Se temos dados iniciais do servidor, começamos com eles
+    const [items, setItems] = useState<LegalSkill[]>(initialData?.skills || []);
+    const [cursor, setCursor] = useState<number | null>(initialData?.nextCursor ?? null);
+    const [totalCount, setTotalCount] = useState(initialData?.total || 0);
+    
+    // Se temos dados iniciais, não precisamos de "loading" inicial
+    const [isLoading, setIsLoading] = useState(!initialData);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    
+    // Ref para rastrear se é a primeira montagem com dados iniciais
+    const isFirstMountWithInitialData = useRef(!!initialData);
 
     const abortRef = useRef<AbortController | null>(null);
     const requestIdRef = useRef(0);
@@ -110,6 +119,14 @@ export function useInfiniteSkills({
 
     // Re-fetch from page 1 whenever any filter/sort/debounced-search changes.
     useEffect(() => {
+        // Se é a primeira montagem e temos dados iniciais compatíveis com os parâmetros, pulamos o fetch
+        if (isFirstMountWithInitialData.current) {
+            isFirstMountWithInitialData.current = false;
+            // Só pulamos se a query e sort baterem com o que veio do servidor
+            // (Assumimos que o componente pai lidou com isso corretamente)
+            return;
+        }
+
         void runQuery(null, "replace");
         return () => abortRef.current?.abort();
         // eslint-disable-next-line react-hooks/exhaustive-deps

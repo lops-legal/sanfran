@@ -1,0 +1,85 @@
+{
+  "versao": "2026-10-17",
+  "observacao": "Datas fixas em MM-DD; datas móveis como deslocamento em dias a partir do Domingo de Páscoa. 'base: true' = previsto em lei ou ato normativo geral e aplicado no vencimento principal. 'base: false' = dia habitualmente sem expediente segundo o calendário anual do tribunal, ainda não conferido para o ano: só entra no cenário alternativo e gera o aviso 'feriado local não confirmado'.",
+  "suspensao_prazos": {
+    "inicio": "12-20",
+    "fim": "01-20",
+    "fontes": { "cpc": "CPC, art. 220", "clt": "CLT, art. 775-A" }
+  },
+  "nacionais": [
+    { "data": "01-01", "nome": "Confraternização Universal", "fonte": "Lei 662/1949, art. 1º (red. Lei 10.607/2002)", "base": true },
+    { "data": "04-21", "nome": "Tiradentes", "fonte": "Lei 662/1949, art. 1º (red. Lei 10.607/2002)", "base": true },
+    { "data": "05-01", "nome": "Dia do Trabalho", "fonte": "Lei 662/1949, art. 1º (red. Lei 10.607/2002)", "base": true },
+    { "data": "09-07", "nome": "Independência do Brasil", "fonte": "Lei 662/1949, art. 1º (red. Lei 10.607/2002)", "base": true },
+    { "data": "10-12", "nome": "Nossa Senhora Aparecida", "fonte": "Lei 6.802/1980", "base": true },
+    { "data": "11-02", "nome": "Finados", "fonte": "Lei 662/1949, art. 1º (red. Lei 10.607/2002)", "base": true },
+    { "data": "11-15", "nome": "Proclamação da República", "fonte": "Lei 662/1949, art. 1º (red. Lei 10.607/2002)", "base": true },
+    { "data": "11-20", "nome": "Dia Nacional de Zumbi e da Consciência Negra", "fonte": "Lei 14.759/2023", "base": true, "desde": 2024 },
+    { "data": "12-25", "nome": "Natal", "fonte": "Lei 662/1949, art. 1º (red. Lei 10.607/2002)", "base": true }
+  ],
+  "estados": {
+    "SP": [
+      { "data": "07-09", "nome": "Revolução Constitucionalista de 1932 (data magna de SP)", "fonte": "Lei estadual SP 9.497/1997; Lei 9.093/1995, art. 1º, II", "base": true }
+    ]
+  },
+  "municipios": {
+    "SP/sao paulo": [
+      { "data": "01-25", "nome": "Aniversário da cidade de São Paulo", "fonte": "Legislação municipal de São Paulo; Lei 9.093/1995, art. 1º, III", "base": true },
+      { "pascoa": -2, "nome": "Sexta-feira Santa", "fonte": "Feriado religioso municipal de São Paulo; Lei 9.093/1995, art. 2º", "base": true },
+      { "pascoa": 60, "nome": "Corpus Christi", "fonte": "Feriado religioso municipal de São Paulo; Lei 9.093/1995, art. 2º", "base": true }
+    ]
+  },
+  "tribunais": {
+    "TJSP": {
+      "nome": "Tribunal de Justiça do Estado de São Paulo",
+      "segmento": "Justiça Estadual",
+      "ufs": ["SP"],
+      "recesso": { "inicio": "12-20", "fim": "01-06", "fonte": "Res. CNJ 244/2016" },
+      "calendario_oficial": "Provimento anual do Conselho Superior da Magistratura do TJSP (www.tjsp.jus.br)",
+      "anos_conferidos": [],
+      "itens": [
+        { "pascoa": -48, "nome": "Segunda-feira de Carnaval", "fonte": "Calendário anual do TJSP", "base": false },
+        { "pascoa": -47, "nome": "Terça-feira de Carnaval", "fonte": "Calendário anual do TJSP", "base": false },
+        { "pascoa": -46, "nome": "Quarta-feira de Cinzas (expediente a partir das 13h)", "fonte": "Calendário anual do TJSP", "base": false, "tipo": "expediente-reduzido" },
+        { "pascoa": -2, "nome": "Sexta-feira Santa", "fonte": "Calendário anual do TJSP", "base": false },
+        { "pascoa": 60, "nome": "Corpus Christi", "fonte": "Calendário anual do TJSP", "base": false },
+        { "data": "12-08", "nome": "Dia da Justiça", "fonte": "Calendário anual do TJSP", "base": false }
+      ]
+    },
+    "TRT2": {
+      "nome": "Tribunal Regional do Trabalho da 2ª Região",
+      "segmento": "Justiça do Trabalho",
+      "ufs": ["SP"],
+      "recesso": { "inicio": "12-20", "fim": "01-06", "fonte": "Res. CNJ 244/2016" },
+      "calendario_oficial": "Ato anual da Presidência do TRT-2 (www.trt2.jus.br)",
+      "anos_conferidos": [],
+      "itens": [
+        { "pascoa": -48, "nome": "Segunda-feira de Carnaval", "fonte": "Calendário anual do TRT-2", "base": false },
+        { "pascoa": -47, "nome": "Terça-feira de Carnaval", "fonte": "Calendário anual do TRT-2", "base": false },
+        { "pascoa": -46, "nome": "Quarta-feira de Cinzas (expediente reduzido)", "fonte": "Calendário anual do TRT-2", "base": false, "tipo": "expediente-reduzido" },
+        { "pascoa": -2, "nome": "Sexta-feira Santa", "fonte": "Calendário anual do TRT-2", "base": false },
+        { "pascoa": 60, "nome": "Corpus Christi", "fonte": "Calendário anual do TRT-2", "base": false },
+        { "data": "12-08", "nome": "Dia da Justiça", "fonte": "Calendário anual do TRT-2", "base": false }
+      ]
+    },
+    "TRF3": {
+      "nome": "Tribunal Regional Federal da 3ª Região (SP e MS)",
+      "segmento": "Justiça Federal",
+      "ufs": ["SP", "MS"],
+      "recesso": { "inicio": "12-20", "fim": "01-06", "fonte": "Lei 5.010/1966, art. 62, I" },
+      "calendario_oficial": "Portaria anual da Presidência do TRF3 (www.trf3.jus.br)",
+      "anos_conferidos": [],
+      "itens": [
+        { "pascoa": -48, "nome": "Segunda-feira de Carnaval", "fonte": "Lei 5.010/1966, art. 62, III", "base": true },
+        { "pascoa": -47, "nome": "Terça-feira de Carnaval", "fonte": "Lei 5.010/1966, art. 62, III", "base": true },
+        { "pascoa": -4, "nome": "Quarta-feira Santa", "fonte": "Lei 5.010/1966, art. 62, II", "base": true },
+        { "pascoa": -3, "nome": "Quinta-feira Santa", "fonte": "Lei 5.010/1966, art. 62, II", "base": true },
+        { "pascoa": -2, "nome": "Sexta-feira Santa", "fonte": "Lei 5.010/1966, art. 62, II", "base": true },
+        { "data": "08-11", "nome": "Criação dos cursos jurídicos", "fonte": "Lei 5.010/1966, art. 62, IV", "base": true },
+        { "data": "11-01", "nome": "Todos os Santos", "fonte": "Lei 5.010/1966, art. 62, IV", "base": true },
+        { "data": "12-08", "nome": "Dia da Justiça", "fonte": "Lei 5.010/1966, art. 62, IV", "base": true },
+        { "pascoa": 60, "nome": "Corpus Christi", "fonte": "Calendário anual do TRF3", "base": false }
+      ]
+    }
+  }
+}

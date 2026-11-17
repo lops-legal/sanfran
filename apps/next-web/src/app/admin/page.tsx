@@ -76,13 +76,13 @@ export default function AdminDashboard() {
         </div>
 
         <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
-          <div className="p-4 border-b border-border bg-muted/20">
+          <div className="p-4 border-b border-border bg-subtle/20">
             <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">Usuários Cadastrados ({profiles.length})</h2>
           </div>
           
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="text-xs text-muted uppercase bg-muted/10 border-b border-border">
+              <thead className="text-xs text-muted uppercase bg-subtle/10 border-b border-border">
                 <tr>
                   <th className="px-6 py-4 font-mono">Usuário</th>
                   <th className="px-6 py-4 font-mono">Email / Username</th>
@@ -96,7 +96,7 @@ export default function AdminDashboard() {
                     <td colSpan={4} className="px-6 py-8 text-center text-muted">Carregando...</td>
                   </tr>
                 ) : profiles.map((p) => (
-                  <tr key={p.id} className="hover:bg-muted/10 transition-colors">
+                  <tr key={p.id} className="hover:bg-subtle/10 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border border-primary/20">
@@ -124,7 +124,7 @@ export default function AdminDashboard() {
                       <button
                         onClick={() => toggleRole(p.id, p.role)}
                         disabled={p.id === user?.id} // não pode alterar o próprio cargo
-                        className="text-xs font-medium px-3 py-1.5 rounded bg-muted/50 text-foreground hover:bg-muted transition-colors disabled:opacity-30"
+                        className="text-xs font-medium px-3 py-1.5 rounded bg-subtle/50 text-foreground hover:bg-subtle transition-colors disabled:opacity-30"
                       >
                         {p.role === "admin" ? "Rebaixar para Usuário" : "Promover a Admin"}
                       </button>

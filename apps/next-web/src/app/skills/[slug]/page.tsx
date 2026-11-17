@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   if (!skill) return { title: "Skill não encontrada" };
 
   return {
-    title: `${skill.name} | Sanfran.md`,
+    title: skill.name,
     description: skill.description,
   };
 }
